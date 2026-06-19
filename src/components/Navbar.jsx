@@ -1,7 +1,7 @@
 import React from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Code } from 'lucide-react';
 
-export default function Navbar({ stats, onAddClick, theme, onThemeToggle, user, onLogout }) {
+export default function Navbar({ stats, onAddClick, theme, onThemeToggle, user, onLogout, onTechStackClick }) {
   return (
     <header className="retro-navbar-unified">
       {/* Left section: App Brand */}
@@ -20,6 +20,16 @@ export default function Navbar({ stats, onAddClick, theme, onThemeToggle, user, 
 
       {/* Right section: System Actions */}
       <div className="retro-header-actions">
+        <button 
+          className="btn-retro"
+          onClick={onTechStackClick}
+          title="View Project Tech Stack"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+        >
+          <Code size={11} />
+          <span>TECH STACK</span>
+        </button>
+
         <button 
           className="btn-retro-toggle" 
           onClick={onThemeToggle}

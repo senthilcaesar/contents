@@ -57,7 +57,7 @@ export default function FilterPanel({
             className={`retro-filter-btn youtube-filter ${filterType === 'youtube' ? 'active' : ''}`}
             onClick={() => setFilterType('youtube')}
           >
-            YOUTUBE_VIDEOS
+            YOUTUBE
           </button>
           <button
             className={`retro-filter-btn podcast-filter ${filterType === 'podcast' ? 'active' : ''}`}

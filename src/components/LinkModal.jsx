@@ -178,7 +178,6 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
                 <input
                   id="modal-url"
                   type="text"
-                  placeholder="https://youtube.com/watch?v=... or Podcast URL"
                   value={url}
                   onChange={handleUrlChange}
                   className={`form-input ${errors.url ? 'input-error' : ''}`}
@@ -197,7 +196,6 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
                 <input
                   id="modal-title"
                   type="text"
-                  placeholder="e.g. My Favorite Podcast Episode"
                   value={title}
                   onChange={(e) => {
                     setTitle(e.target.value);
@@ -219,7 +217,6 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
                 <input
                   id="modal-creator"
                   type="text"
-                  placeholder="e.g. Lex Fridman, MKBHD"
                   value={creator}
                   onChange={(e) => setCreator(e.target.value)}
                   className="form-input"
@@ -231,7 +228,6 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
                 <label htmlFor="modal-desc" className="form-label">Description (Optional)</label>
                 <textarea
                   id="modal-desc"
-                  placeholder="What makes this link special?"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="form-textarea"
@@ -244,7 +240,6 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
                 <input
                   id="modal-tags"
                   type="text"
-                  placeholder="tech, philosophy, comedy"
                   value={tagsInput}
                   onChange={(e) => setTagsInput(e.target.value)}
                   className="form-input"
@@ -253,11 +248,11 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
 
               {/* Action Buttons */}
               <div className="modal-actions">
-                <button type="button" className="btn btn-secondary" onClick={onClose}>
-                  Cancel
+                <button type="button" className="btn-retro btn-retro-secondary" onClick={onClose}>
+                  CANCEL
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  {editItem ? 'Save Changes' : 'Add to Vault'}
+                <button type="submit" className="btn-retro btn-retro-primary">
+                  {editItem ? 'SAVE CHANGES' : 'ADD TO VAULT'}
                 </button>
               </div>
             </form>

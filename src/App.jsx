@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { FolderHeart, Plus, HelpCircle, Inbox } from 'lucide-react';
+import { FolderHeart, Plus, HelpCircle, Inbox, Code } from 'lucide-react';
 import Navbar from './components/Navbar';
 import FilterPanel from './components/FilterPanel';
 import LinkCard from './components/LinkCard';
 import LinkModal from './components/LinkModal';
 import DeleteConfirmationModal from './components/DeleteConfirmationModal';
+import TechStackModal from './components/TechStackModal';
 import ToastContainer from './components/Toast';
 
 // Import Firebase config and hooks
@@ -109,6 +110,7 @@ export default function App() {
   };
 
   const [deletingLinkId, setDeletingLinkId] = useState(null);
+  const [isTechModalOpen, setIsTechModalOpen] = useState(false);
 
   const deletingLinkTitle = useMemo(() => {
     const link = links.find((l) => l.id === deletingLinkId);
@@ -348,6 +350,15 @@ export default function App() {
           </div>
           <div className="retro-header-actions">
             <button 
+              className="btn-retro"
+              onClick={() => setIsTechModalOpen(true)}
+              title="View Project Tech Stack"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+            >
+              <Code size={11} />
+              <span>TECH STACK</span>
+            </button>
+            <button 
               className="btn-retro-toggle" 
               onClick={toggleTheme}
               title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
@@ -382,6 +393,13 @@ export default function App() {
             <div className="login-footer-text">SECURE SECTOR 9 // CLOUD ENCRYPTED</div>
           </motion.div>
         </main>
+
+        {/* Tech Stack Modal */}
+        <TechStackModal
+          isOpen={isTechModalOpen}
+          onClose={() => setIsTechModalOpen(false)}
+        />
+
         <ToastContainer toasts={toasts} onClose={removeToast} />
       </div>
     );
@@ -398,6 +416,7 @@ export default function App() {
         onThemeToggle={toggleTheme} 
         user={currentUser}
         onLogout={handleLogout}
+        onTechStackClick={() => setIsTechModalOpen(true)}
       />
 
       {/* Filter and Search Panel */}
@@ -474,6 +493,12 @@ export default function App() {
         onClose={() => setDeletingLinkId(null)}
         onConfirm={handleConfirmDelete}
         itemTitle={deletingLinkTitle}
+      />
+
+      {/* Tech Stack Modal */}
+      <TechStackModal
+        isOpen={isTechModalOpen}
+        onClose={() => setIsTechModalOpen(false)}
       />
 
       {/* Toast Notification HUD */}
