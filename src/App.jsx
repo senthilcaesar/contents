@@ -95,6 +95,14 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLink, setEditingLink] = useState(null);
   const [activePlayerItem, setActivePlayerItem] = useState(null);
+  const [isPlayerMinimized, setIsPlayerMinimized] = useState(false);
+
+  // Open the player in minimized mode by default when a new link is played
+  useEffect(() => {
+    if (activePlayerItem) {
+      setIsPlayerMinimized(true);
+    }
+  }, [activePlayerItem]);
   
   const [toasts, setToasts] = useState([]);
 
@@ -549,7 +557,13 @@ export default function App() {
       {activePlayerItem && (
         <RetroPlayer
           item={activePlayerItem}
-          onClose={() => setActivePlayerItem(null)}
+          isMinimized={isPlayerMinimized}
+          onMinimize={() => setIsPlayerMinimized(true)}
+          onMaximize={() => setIsPlayerMinimized(false)}
+          onClose={() => {
+            setActivePlayerItem(null);
+            setIsPlayerMinimized(false);
+          }}
         />
       )}
     </div>

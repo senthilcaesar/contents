@@ -1,691 +1,646 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Play, Pause, Square, Volume2, VolumeX, Radio } from 'lucide-react';
+import { Radio, Play, Pause } from 'lucide-react';
 
-export default function RetroPlayer({ item, onClose }) {
+export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize, onClose }) {
   const isYouTube = item.type === 'youtube';
   const [isPlaying, setIsPlaying] = useState(isYouTube);
-  const [isMuted, setIsMuted] = useState(false);
   const [isPoweringOff, setIsPoweringOff] = useState(false);
   const [isTheatreMode, setIsTheatreMode] = useState(false);
   const [isCleanScreen, setIsCleanScreen] = useState(true);
-  const [aspectRatio, setAspectRatio] = useState('16/9'); // '16/9', '4:3', '21:9'
-  
-  // Refs for audio synthesizers
-  const audioContextRef = useRef(null);
-  const noiseGainNodeRef = useRef(null);
-  const humGainNodeRef = useRef(null);
-  const isAudioInitialized = useRef(false);
+  const [aspectRatio, setAspectRatio] = useState('16/9');
+  const [iframeKey, setIframeKey] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Refs for tape deck animations
-  const canvasRef = useRef(null);
-  const requestRef = useRef(null);
-  const iframeRef = useRef(null);
+  useEffect(() => {
+    if (isMinimized) setIsFullscreen(false);
+  }, [isMinimized]);
+
+  // Animation refs
+  const canvasRef     = useRef(null);
+  const requestRef    = useRef(null);
+  const iframeRef     = useRef(null);
   const reelsAngleRef = useRef(0);
-  const reelsSpeedRef = useRef(3); // Degrees per frame
-  const needleAngle1Ref = useRef(-60); // Resting angle
-  const needleAngle2Ref = useRef(-60);
-
-  // YouTube ID Extraction
-  const getYouTubeId = (url) => {
-    if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
-  };
-
-  // Spotify Episode ID Extraction
-  const getSpotifyEpisodeId = (url) => {
-    if (!url) return null;
-    const match = url.match(/open\.spotify\.com\/episode\/([a-zA-Z0-9]+)/);
-    return match ? match[1] : null;
-  };
-
-  // Apple Podcasts Embed URL converter
-  const getApplePodcastsEmbedUrl = (url) => {
-    if (!url) return null;
-    if (url.includes('podcasts.apple.com')) {
-      return url.replace('podcasts.apple.com', 'embed.podcasts.apple.com');
-    }
-    return null;
-  };
-
-  const youtubeId = isYouTube ? getYouTubeId(item.url) : null;
-  const spotifyId = !isYouTube ? getSpotifyEpisodeId(item.url) : null;
-  const appleEmbedUrl = !isYouTube ? getApplePodcastsEmbedUrl(item.url) : null;
-  const spotifyPlaceholderRef = useRef(null);
+  const reelsSpeedRef = useRef(0);
+  const needle1Ref    = useRef(-60);
+  const needle2Ref    = useRef(-60);
+  const progressRef   = useRef(0.28);
+  const phaseRef      = useRef(0);
+  const spotifyWrapperRef  = useRef(null);
   const embedControllerRef = useRef(null);
 
-  // Initialize Web Audio API for ambient tape hiss and transformer hum
-  const initTapeSound = () => {
-    if (isAudioInitialized.current) return;
-    try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      const ctx = new AudioContext();
-      audioContextRef.current = ctx;
-
-      // 1. Generate White Noise Buffer for Tape Hiss
-      const bufferSize = 2 * ctx.sampleRate;
-      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const output = noiseBuffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        output[i] = Math.random() * 2 - 1;
-      }
-
-      const noiseSource = ctx.createBufferSource();
-      noiseSource.buffer = noiseBuffer;
-      noiseSource.loop = true;
-
-      // Filter the noise to sound like a warm tape hiss
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.value = 1200; // Sage tape frequency
-      filter.Q.value = 0.6;
-
-      const noiseGain = ctx.createGain();
-      noiseGain.gain.value = isMuted ? 0 : 0.025; // Warm, subtle hiss
-      noiseGainNodeRef.current = noiseGain;
-
-      noiseSource.connect(filter);
-      filter.connect(noiseGain);
-      noiseGain.connect(ctx.destination);
-      noiseSource.start();
-
-      // 2. Generate 60Hz hum for industrial electrical vibe
-      const humOsc = ctx.createOscillator();
-      humOsc.type = 'sine';
-      humOsc.frequency.value = 60; // 60Hz transformer hum
-
-      const humFilter = ctx.createBiquadFilter();
-      humFilter.type = 'lowpass';
-      humFilter.frequency.value = 100;
-
-      const humGain = ctx.createGain();
-      humGain.gain.value = isMuted ? 0 : 0.008; // extremely subtle
-      humGainNodeRef.current = humGain;
-
-      humOsc.connect(humFilter);
-      humFilter.connect(humGain);
-      humGain.connect(ctx.destination);
-      humOsc.start();
-
-      isAudioInitialized.current = true;
-    } catch (err) {
-      console.warn('AudioContext failed to initialize:', err);
-    }
+  // ── URL helpers ──────────────────────────────────────────────────────────
+  const getYouTubeId = (url) => {
+    if (!url) return null;
+    const m = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
+    return (m && m[2].length === 11) ? m[2] : null;
+  };
+  const getSpotifyId = (url) => {
+    if (!url) return null;
+    const m = url.match(/open\.spotify\.com\/episode\/([a-zA-Z0-9]+)/);
+    return m ? m[1] : null;
+  };
+  const getAppleUrl = (url) => {
+    if (!url || !url.includes('podcasts.apple.com')) return null;
+    return url.replace('podcasts.apple.com', 'embed.podcasts.apple.com');
   };
 
-  // Mute/Unmute control for synths
-  useEffect(() => {
-    if (noiseGainNodeRef.current && humGainNodeRef.current) {
-      const volume = isMuted || !isPlaying ? 0 : 1;
-      noiseGainNodeRef.current.gain.setValueAtTime(volume * 0.025, audioContextRef.current.currentTime);
-      humGainNodeRef.current.gain.setValueAtTime(volume * 0.008, audioContextRef.current.currentTime);
-    }
-  }, [isMuted, isPlaying]);
+  const youtubeId  = isYouTube ? getYouTubeId(item.url)  : null;
+  const spotifyId  = !isYouTube ? getSpotifyId(item.url)  : null;
+  const appleUrl   = !isYouTube ? getAppleUrl(item.url)   : null;
 
-  const podcastAudioRef = useRef(null);
+  // ── Cleanup ──────────────────────────────────────────────────────────────
+  useEffect(() => () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); }, []);
 
-  // Clean up audio on unmount
-  useEffect(() => {
-    if (!isYouTube && !spotifyId && !appleEmbedUrl) {
-      podcastAudioRef.current = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3');
-      podcastAudioRef.current.loop = true;
-      podcastAudioRef.current.volume = 0.55;
-    }
-
-    return () => {
-      if (podcastAudioRef.current) {
-        podcastAudioRef.current.pause();
-        podcastAudioRef.current = null;
-      }
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        audioContextRef.current.close();
-      }
-      if (requestRef.current) {
-        cancelAnimationFrame(requestRef.current);
-      }
-    };
-  }, [isYouTube, spotifyId, appleEmbedUrl]);
-
-  // Load and manage Spotify IFrame API script & controllers
+  // ── Spotify IFrame API ───────────────────────────────────────────────────
   useEffect(() => {
     if (isYouTube || !spotifyId) return;
+    let cancelled = false;
+    let localCtrl  = null;
 
-    // Load Spotify Embed API script if not present
     let script = document.getElementById('spotify-iframe-api');
     if (!script) {
       script = document.createElement('script');
-      script.id = 'spotify-iframe-api';
+      script.id  = 'spotify-iframe-api';
       script.src = 'https://open.spotify.com/embed/iframe-api/v1';
       script.async = true;
       document.body.appendChild(script);
     }
 
-    const initController = (IFrameAPI) => {
-      const element = spotifyPlaceholderRef.current;
-      if (!element) return;
+    const init = (API) => {
+      const wrapper = spotifyWrapperRef.current;
+      if (!wrapper) return;
+      wrapper.innerHTML = '';
+      const el = document.createElement('div');
+      el.style.cssText = 'width:100%;height:100%;';
+      wrapper.appendChild(el);
 
-      const options = {
-        uri: `spotify:episode:${spotifyId}`,
-        width: '100%',
-        height: '152',
-      };
-
-      IFrameAPI.createController(element, options, (EmbedController) => {
-        embedControllerRef.current = EmbedController;
-
-        // Register playback event listener to sync reels/oscilloscope
-        EmbedController.addListener('playback_update', (e) => {
-          const { isPaused, isBuffering } = e.data;
-          setIsPlaying(!isPaused && !isBuffering);
+      API.createController(el, { uri: `spotify:episode:${spotifyId}`, width: '100%', height: '152' }, (ctrl) => {
+        if (cancelled) { ctrl?.destroy?.(); return; }
+        localCtrl = ctrl;
+        embedControllerRef.current = ctrl;
+        ctrl.addListener('playback_update', ({ data }) => {
+          setIsPlaying(!data.isPaused && !data.isBuffering);
+          if (data.duration > 0) progressRef.current = data.position / data.duration;
         });
-
-        // Initialize tape sound and play automatically
-        initTapeSound();
-        EmbedController.play();
+        ctrl.play();
       });
     };
 
-    // If script is already loaded and API is ready
-    if (window.SpotifyIframeApi) {
-      initController(window.SpotifyIframeApi);
-    } else {
-      // Define global ready handler
-      const oldReady = window.onSpotifyIframeApiReady;
-      window.onSpotifyIframeApiReady = (IFrameAPI) => {
-        window.SpotifyIframeApi = IFrameAPI;
-        if (oldReady) oldReady(IFrameAPI);
-        initController(IFrameAPI);
+    if (window.SpotifyIframeApi) init(window.SpotifyIframeApi);
+    else {
+      const prev = window.onSpotifyIframeApiReady;
+      window.onSpotifyIframeApiReady = (API) => {
+        window.SpotifyIframeApi = API;
+        if (prev) prev(API);
+        init(API);
       };
     }
 
     return () => {
-      if (embedControllerRef.current) {
-        embedControllerRef.current = null;
-      }
+      cancelled = true;
+      embedControllerRef.current?.destroy?.();
+      embedControllerRef.current = null;
+      localCtrl?.destroy?.();
+      if (spotifyWrapperRef.current) spotifyWrapperRef.current.innerHTML = '';
     };
   }, [isYouTube, spotifyId]);
 
-  // Visualizer Canvas & VU needle update loops
+  // ── Animation loop (podcast only) ────────────────────────────────────────
   useEffect(() => {
-    if (isYouTube) return; // Only run for podcast tape visualizer
-
+    if (isYouTube) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
-    let phase = 0;
+    const W = canvas.width, H = canvas.height;
+
+    const CX_L = 130, CX_R = 470, CY = 100;
 
     const render = () => {
-      // 1. Clear Canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#1e2030'; // Dark radar/CRT screen background
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const phase = phaseRef.current;
 
-      // Draw Grid Lines (Oscilloscope grid)
-      ctx.strokeStyle = 'rgba(166, 209, 137, 0.05)';
+      // ── Oscilloscope ─────────────────────────────────────────────
+      ctx.clearRect(0, 0, W, H);
+
+      // Grid
+      ctx.strokeStyle = 'rgba(0,255,157,0.06)';
       ctx.lineWidth = 1;
-      for (let x = 0; x < canvas.width; x += 20) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-      for (let y = 0; y < canvas.height; y += 20) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-      }
+      for (let x = 0; x < W; x += 22) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+      for (let y = 0; y < H; y += 22) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+      ctx.strokeStyle = 'rgba(0,255,157,0.18)';
+      ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
 
-      // Draw horizontal center line
-      ctx.strokeStyle = 'rgba(166, 209, 137, 0.15)';
+      // Waveform
       ctx.beginPath();
-      ctx.moveTo(0, canvas.height / 2);
-      ctx.lineTo(canvas.width, canvas.height / 2);
-      ctx.stroke();
-
-      // 2. Draw Oscilloscope Waveform
-      ctx.beginPath();
-      ctx.lineWidth = 2.5;
-      ctx.strokeStyle = '#a6d189'; // Glowing green trace
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = '#a6d189';
-
-      const amplitude = isPlaying ? 22 : 0.5; // Flat line when paused
-      const frequency = 0.035;
-
-      for (let x = 0; x < canvas.width; x++) {
-        // Compose multiple sine waves for a rich, realistic oscilloscope wave
-        let y = canvas.height / 2;
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#00ff9d';
+      ctx.shadowBlur  = 12;
+      ctx.shadowColor = '#00ff9d';
+      const amp   = isPlaying ? 24 : 0.6;
+      const sweep = 2.0;
+      const tpp   = sweep / W;
+      const tOff  = phase * 0.022;
+      for (let x = 0; x < W; x++) {
+        let y = H / 2;
         if (isPlaying) {
-          y += Math.sin(x * frequency + phase) * amplitude;
-          y += Math.sin(x * 0.015 - phase * 1.5) * (amplitude * 0.4);
-          y += (Math.random() - 0.5) * 1.5; // Subtle high-frequency noise jitter
+          const t  = x * tpp + tOff;
+          const so = Math.sin(2 * Math.PI * 0.75 * t) * 0.45;
+          const se = Math.max(0, Math.sin(2 * Math.PI * 0.08 * t) * 0.7 + 0.3);
+          const sp = se * Math.sin(2 * Math.PI * 13 * t) * 0.30;
+          const nf = [1.2, 2.7, 4.3, 6.1, 8.7];
+          const na = [0.22, 0.16, 0.12, 0.09, 0.07];
+          let noise = 0;
+          for (let i = 0; i < nf.length; i++) noise += Math.sin(2*Math.PI*nf[i]*t + i*1.7) * na[i];
+          y += (so + sp + noise) * amp + (Math.random()-0.5) * 0.8;
         } else {
-          y += (Math.random() - 0.5) * 0.5; // Dead static hum
+          y += (Math.random()-0.5) * 0.5;
         }
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
       ctx.stroke();
-      ctx.shadowBlur = 0; // Reset shadow
+      ctx.shadowBlur = 0;
 
-      // Increment phase for wave animation speed
+      // ── Physics ────────────────────────────────────────────────────
       if (isPlaying) {
-        phase += 0.12;
-        // Spin tape reels
+        phaseRef.current += 0.10;
+        if (!spotifyId) {
+          progressRef.current += 0.000045;
+          if (progressRef.current > 1) progressRef.current = 0;
+        }
         reelsAngleRef.current += reelsSpeedRef.current;
-        if (reelsAngleRef.current >= 360) reelsAngleRef.current = 0;
+        if (reelsAngleRef.current >= 360) reelsAngleRef.current -= 360;
       }
+      if (isPlaying && reelsSpeedRef.current < 2.5)       reelsSpeedRef.current += 0.05;
+      else if (!isPlaying && reelsSpeedRef.current > 0) { reelsSpeedRef.current -= 0.10; if (reelsSpeedRef.current < 0) reelsSpeedRef.current = 0; }
 
-      // Update reels animation speed
-      if (isPlaying && reelsSpeedRef.current < 2.5) {
-        reelsSpeedRef.current += 0.05; // Spin up
-      } else if (!isPlaying && reelsSpeedRef.current > 0) {
-        reelsSpeedRef.current -= 0.1; // Slow down to stop
-        if (reelsSpeedRef.current < 0) reelsSpeedRef.current = 0;
-      }
+      // ── Update SVG reels ───────────────────────────────────────────
+      const r1 = 28 + 46 * (1 - progressRef.current);
+      const r2 = 28 + 46 * progressRef.current;
 
-      // Rotate reel DOM elements manually to prevent react render overhead
-      const reelLeft = document.getElementById('reel-left');
-      const reelRight = document.getElementById('reel-right');
-      if (reelLeft) reelLeft.style.transform = `rotate(${reelsAngleRef.current}deg)`;
-      if (reelRight) reelRight.style.transform = `rotate(${reelsAngleRef.current}deg)`;
+      document.getElementById('left-tape-wrap')?.setAttribute('r', r1);
+      document.getElementById('right-tape-wrap')?.setAttribute('r', r2);
 
-      // 3. Update Bouncing VU Needles
-      const targetNeedleAngle1 = isPlaying 
-        ? -40 + Math.sin(phase * 1.4) * 35 + (Math.random() - 0.5) * 15
-        : -60;
-      const targetNeedleAngle2 = isPlaying
-        ? -42 + Math.sin(phase * 1.7) * 32 + (Math.random() - 0.5) * 18
-        : -60;
+      document.getElementById('left-tape-arc')?.setAttribute('d',
+        `M ${CX_L} ${CY - r1} A ${r1} ${r1} 0 0 0 ${CX_L} ${CY + r1}`);
+      document.getElementById('right-tape-arc')?.setAttribute('d',
+        `M ${CX_R} ${CY + r2} A ${r2} ${r2} 0 0 0 ${CX_R} ${CY - r2}`);
 
-      // Inertia interpolation (smooth needle movement)
-      needleAngle1Ref.current += (targetNeedleAngle1 - needleAngle1Ref.current) * 0.25;
-      needleAngle2Ref.current += (targetNeedleAngle2 - needleAngle2Ref.current) * 0.25;
+      const setLine = (id, y1, y2) => {
+        const el = document.getElementById(id);
+        if (el) { el.setAttribute('y1', y1); el.setAttribute('y2', y2); }
+      };
+      setLine('top-tape-line',    CY - r1, CY - r2);
+      setLine('bot-tape-line',    CY + r1, CY + r2);
+      setLine('top-tape-line-hi', CY - r1, CY - r2);
+      setLine('bot-tape-line-hi', CY + r1, CY + r2);
 
-      const needle1 = document.getElementById('vu-needle-left');
-      const needle2 = document.getElementById('vu-needle-right');
-      if (needle1) needle1.style.transform = `rotate(${needleAngle1Ref.current}deg)`;
-      if (needle2) needle2.style.transform = `rotate(${needleAngle2Ref.current}deg)`;
+      const rot = reelsAngleRef.current;
+      document.getElementById('left-spokes')?.setAttribute('transform',  `rotate(${rot} ${CX_L} ${CY})`);
+      document.getElementById('right-spokes')?.setAttribute('transform', `rotate(${rot} ${CX_R} ${CY})`);
+
+      // ── VU needles ─────────────────────────────────────────────────
+      const t1 = isPlaying ? -40 + Math.sin(phase*1.4)*35 + (Math.random()-0.5)*15 : -60;
+      const t2 = isPlaying ? -42 + Math.sin(phase*1.7)*32 + (Math.random()-0.5)*18 : -60;
+      needle1Ref.current += (t1 - needle1Ref.current) * 0.25;
+      needle2Ref.current += (t2 - needle2Ref.current) * 0.25;
+      const n1 = document.getElementById('vu-needle-left');
+      const n2 = document.getElementById('vu-needle-right');
+      if (n1) n1.style.transform = `rotate(${needle1Ref.current}deg)`;
+      if (n2) n2.style.transform = `rotate(${needle2Ref.current}deg)`;
 
       requestRef.current = requestAnimationFrame(render);
     };
 
     requestRef.current = requestAnimationFrame(render);
     return () => cancelAnimationFrame(requestRef.current);
-  }, [isPlaying, isYouTube]);
+  }, [isPlaying, isYouTube, spotifyId]);
 
-  const handleTapePlay = () => {
-    initTapeSound();
-    setIsPlaying(true);
-    if (spotifyId && embedControllerRef.current) {
-      embedControllerRef.current.play();
-    } else if (podcastAudioRef.current) {
-      podcastAudioRef.current.play().catch(err => console.log("Audio play error:", err));
-      podcastAudioRef.current.muted = isMuted;
-    }
+  // ── Actions ──────────────────────────────────────────────────────────────
+  const triggerPowerOff = () => { setIsPoweringOff(true); setTimeout(onClose, 550); };
+
+  const toggleYT = () => {
+    const next = !isPlaying;
+    setIsPlaying(next);
+    iframeRef.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: 'command', func: next ? 'playVideo' : 'pauseVideo', args: '' }), '*'
+    );
   };
 
-  const handleTapePause = () => {
-    setIsPlaying(false);
-    if (spotifyId && embedControllerRef.current) {
-      embedControllerRef.current.pause();
-    } else if (podcastAudioRef.current) {
-      podcastAudioRef.current.pause();
-    }
+  const handlePlay = () => {
+    if (isYouTube) toggleYT();
+    else if (embedControllerRef.current) embedControllerRef.current.togglePlay();
+    else setIsPlaying(p => !p);
   };
 
-  const handleTapeMute = () => {
-    const nextMute = !isMuted;
-    setIsMuted(nextMute);
-    if (podcastAudioRef.current) {
-      podcastAudioRef.current.muted = nextMute;
-    }
-  };
+  const cycleAR = () => setAspectRatio(p => p === '16/9' ? '21/9' : p === '21/9' ? '4/3' : '16/9');
 
-  // Autoplay fallback/other podcasts on mount
-  useEffect(() => {
-    if (!isYouTube && !spotifyId && !appleEmbedUrl) {
-      const timer = setTimeout(() => {
-        handleTapePlay();
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isYouTube, spotifyId, appleEmbedUrl]);
+  // ── Cassette SVG ─────────────────────────────────────────────────────────
+  const CX_L = 130, CX_R = 470, CY = 100;
+  const p0  = progressRef.current;
+  const R1  = 28 + 46 * (1 - p0);
+  const R2  = 28 + 46 * p0;
 
-  const triggerPowerOff = () => {
-    setIsPoweringOff(true);
-    // Let the TV fade collapse trigger for 450ms before calling onClose
-    setTimeout(() => {
-      onClose();
-    }, 450);
-  };
+  const SPOKES = [0, 60, 120, 180, 240, 300];
 
-  const toggleYoutubePlay = () => {
-    const nextPlaying = !isPlaying;
-    setIsPlaying(nextPlaying);
-    
-    if (iframeRef.current && iframeRef.current.contentWindow) {
-      const command = nextPlaying ? 'playVideo' : 'pauseVideo';
-      iframeRef.current.contentWindow.postMessage(
-        JSON.stringify({ event: 'command', func: command, args: '' }),
-        '*'
-      );
-    }
-  };
+  const ReelSVG = () => (
+    <svg className="rp-reel-svg" viewBox="0 0 600 200" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        {/* Metallic hub gradient */}
+        <radialGradient id="rg-hub" cx="40%" cy="35%" r="65%">
+          <stop offset="0%"   stopColor="#e0e0e0" />
+          <stop offset="40%"  stopColor="#909090" />
+          <stop offset="85%"  stopColor="#383838" />
+          <stop offset="100%" stopColor="#111" />
+        </radialGradient>
+        {/* Brown tape gradient */}
+        <radialGradient id="rg-tape" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"   stopColor="#c08060" />
+          <stop offset="55%"  stopColor="#8c5630" />
+          <stop offset="88%"  stopColor="#5c3014" />
+          <stop offset="100%" stopColor="#3a1a05" />
+        </radialGradient>
+        {/* Reel body gradient */}
+        <radialGradient id="rg-reel" cx="40%" cy="35%" r="70%">
+          <stop offset="0%"   stopColor="#3a3a50" />
+          <stop offset="60%"  stopColor="#20202e" />
+          <stop offset="100%" stopColor="#10101a" />
+        </radialGradient>
+        {/* Chrome sheen */}
+        <linearGradient id="lg-sheen" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stopColor="#fff" stopOpacity="0.12" />
+          <stop offset="50%"  stopColor="#fff" stopOpacity="0.04" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0.08" />
+        </linearGradient>
+        {/* Tape glow */}
+        <filter id="tape-glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="2" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        {/* Reel shadow */}
+        <filter id="reel-shadow" x="-15%" y="-15%" width="130%" height="130%">
+          <feDropShadow dx="0" dy="3" stdDeviation="5" floodColor="rgba(0,0,0,0.6)"/>
+        </filter>
+      </defs>
 
-  const cycleAspectRatio = () => {
-    setAspectRatio((prev) => {
-      if (prev === '16/9') return '21/9';
-      if (prev === '21/9') return '4/3';
-      return '16/9';
-    });
-  };
+      {/* ── Left Reel ─────────────────────────────────────────── */}
+      <g filter="url(#reel-shadow)">
+        {/* Outer ring */}
+        <circle cx={CX_L} cy={CY} r="92" fill="url(#rg-reel)" />
+        <circle cx={CX_L} cy={CY} r="92" fill="url(#lg-sheen)" />
+        <circle cx={CX_L} cy={CY} r="92" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+        <circle cx={CX_L} cy={CY} r="90" fill="none" stroke="rgba(0,0,0,0.5)" strokeWidth="2" />
 
+        {/* Spokes (rotated by JS) */}
+        <g id="left-spokes">
+          {SPOKES.map(a => (
+            <line key={a}
+              x1={CX_L} y1={CY - 20} x2={CX_L} y2={CY - 84}
+              stroke="#4a4a60" strokeWidth="6" strokeLinecap="round"
+              transform={`rotate(${a} ${CX_L} ${CY})`}
+            />
+          ))}
+          {/* Inner ring */}
+          <circle cx={CX_L} cy={CY} r="22" fill="#1a1a28" stroke="rgba(255,255,255,0.07)" strokeWidth="1.5" />
+        </g>
+
+        {/* Tape wrap (radius updated by JS) */}
+        <circle id="left-tape-wrap" cx={CX_L} cy={CY} r={R1} fill="url(#rg-tape)" stroke="#3a1a05" strokeWidth="1.5" />
+
+        {/* Hub centre */}
+        <circle cx={CX_L} cy={CY} r="18" fill="url(#rg-hub)" />
+        <circle cx={CX_L} cy={CY} r="18" fill="url(#lg-sheen)" />
+        <circle cx={CX_L} cy={CY} r="7"  fill="#080808" />
+        <circle cx={CX_L} cy={CY} r="3"  fill="#222" />
+      </g>
+
+      {/* ── Right Reel ────────────────────────────────────────── */}
+      <g filter="url(#reel-shadow)">
+        <circle cx={CX_R} cy={CY} r="92" fill="url(#rg-reel)" />
+        <circle cx={CX_R} cy={CY} r="92" fill="url(#lg-sheen)" />
+        <circle cx={CX_R} cy={CY} r="92" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+        <circle cx={CX_R} cy={CY} r="90" fill="none" stroke="rgba(0,0,0,0.5)" strokeWidth="2" />
+
+        <g id="right-spokes">
+          {SPOKES.map(a => (
+            <line key={a}
+              x1={CX_R} y1={CY - 20} x2={CX_R} y2={CY - 84}
+              stroke="#4a4a60" strokeWidth="6" strokeLinecap="round"
+              transform={`rotate(${a} ${CX_R} ${CY})`}
+            />
+          ))}
+          <circle cx={CX_R} cy={CY} r="22" fill="#1a1a28" stroke="rgba(255,255,255,0.07)" strokeWidth="1.5" />
+        </g>
+
+        <circle id="right-tape-wrap" cx={CX_R} cy={CY} r={R2} fill="url(#rg-tape)" stroke="#3a1a05" strokeWidth="1.5" />
+
+        <circle cx={CX_R} cy={CY} r="18" fill="url(#rg-hub)" />
+        <circle cx={CX_R} cy={CY} r="18" fill="url(#lg-sheen)" />
+        <circle cx={CX_R} cy={CY} r="7"  fill="#080808" />
+        <circle cx={CX_R} cy={CY} r="3"  fill="#222" />
+      </g>
+
+      {/* ── Tape paths (drawn on top) ──────────────────────────── */}
+      {/* Shadow layer */}
+      <line x1={CX_L} y1={CY - R1} x2={CX_R} y2={CY - R2} stroke="#000" strokeWidth="9" opacity="0.35" />
+      <line x1={CX_L} y1={CY + R1} x2={CX_R} y2={CY + R2} stroke="#000" strokeWidth="9" opacity="0.35" />
+
+      {/* Main tape lines */}
+      <line id="top-tape-line" x1={CX_L} y1={CY - R1} x2={CX_R} y2={CY - R2}
+        stroke="#6b3a1c" strokeWidth="6" opacity="0.95" filter="url(#tape-glow)" />
+      <line id="bot-tape-line" x1={CX_L} y1={CY + R1} x2={CX_R} y2={CY + R2}
+        stroke="#6b3a1c" strokeWidth="6" opacity="0.95" filter="url(#tape-glow)" />
+
+      {/* Highlight stripe */}
+      <line id="top-tape-line-hi" x1={CX_L} y1={CY - R1} x2={CX_R} y2={CY - R2}
+        stroke="#c08060" strokeWidth="1.5" opacity="0.3" />
+      <line id="bot-tape-line-hi" x1={CX_L} y1={CY + R1} x2={CX_R} y2={CY + R2}
+        stroke="#c08060" strokeWidth="1.5" opacity="0.3" />
+
+      {/* Wrapping arcs */}
+      <path id="left-tape-arc"
+        d={`M ${CX_L} ${CY - R1} A ${R1} ${R1} 0 0 0 ${CX_L} ${CY + R1}`}
+        fill="none" stroke="#6b3a1c" strokeWidth="6" strokeLinecap="round" opacity="0.95" />
+      <path id="right-tape-arc"
+        d={`M ${CX_R} ${CY + R2} A ${R2} ${R2} 0 0 0 ${CX_R} ${CY - R2}`}
+        fill="none" stroke="#6b3a1c" strokeWidth="6" strokeLinecap="round" opacity="0.95" />
+
+      {/* Tape head (centre guide) */}
+      <rect x="266" y={CY - 12} width="68" height="24" rx="6" fill="#0d0d18" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" />
+      <rect x="272" y={CY - 6} width="56" height="4" rx="2" fill="#f59e0b" opacity="0.8" />
+      <rect x="272" y={CY + 2} width="56" height="4" rx="2" fill="#f59e0b" opacity="0.4" />
+    </svg>
+  );
+
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className={`modal-overlay-container ${isTheatreMode ? 'theatre-overlay' : ''}`}>
-      <div className={`modal-backdrop ${isTheatreMode ? 'theatre-backdrop' : ''}`} onClick={isYouTube ? triggerPowerOff : onClose} />
-      
+    <div className={[
+      'rp-overlay',
+      isMinimized   ? 'rp-overlay--mini'    : '',
+      isFullscreen  ? 'rp-overlay--full'    : '',
+      (isYouTube && isTheatreMode && !isFullscreen) ? 'rp-overlay--theatre' : '',
+    ].join(' ')}>
+
+      {/* Backdrop */}
+      {!isMinimized && (
+        <div className="rp-backdrop"
+          onClick={() => {
+            if (isFullscreen) { setIsFullscreen(false); return; }
+            if (isYouTube && isTheatreMode) { setIsTheatreMode(false); return; }
+            if (isYouTube) triggerPowerOff();
+          }}
+        />
+      )}
+
       <AnimatePresence>
-        <motion.div
-          initial={{ scale: 0.9, y: 30, opacity: 0 }}
-          animate={{ scale: 1, y: 0, opacity: 1 }}
-          exit={{ scale: 0.8, y: 40, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-          className={`retro-player-card ${isYouTube ? 'crt-tv-container' : 'tape-deck-container'} ${isPoweringOff ? 'tv-power-off' : ''} ${isTheatreMode ? 'theatre-mode' : ''}`}
+        <motion.div key="rp-card"
+          initial={{ y: 50, opacity: 0, scale: 0.96 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          exit={{ y: 60, opacity: 0, scale: 0.93 }}
+          transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+          className={[
+            'rp-card',
+            isYouTube     ? 'rp-card--yt'      : 'rp-card--tape',
+            isPoweringOff ? 'rp-card--poweroff' : '',
+            isFullscreen  ? 'rp-card--full'     : '',
+            isMinimized   ? 'rp-card--mini'     : '',
+            (isYouTube && isTheatreMode && !isFullscreen) ? 'rp-card--theatre' : '',
+          ].join(' ')}
         >
-          {/* Main Close button */}
-          <button 
-            className="player-close-btn" 
-            onClick={isYouTube ? triggerPowerOff : onClose}
-            title={isYouTube ? "Switch TV Off" : "Close Deck"}
-          >
-            <X size={16} />
-          </button>
 
-          {isYouTube ? (
-            /* ==============================================================
-               1. CRT TV CABINET INTERFACE (YOUTUBE MODAL)
-               ============================================================== */
-            <div className="crt-tv-wrapper">
+          {/* ╔══════════════════════════════════════════════════╗
+              ║  WINDOW CHROME  (traffic-light buttons)          ║
+              ╚══════════════════════════════════════════════════╝ */}
+          <div className="rp-chrome">
+            <button className="rp-dot rp-dot--close"   onClick={isYouTube ? triggerPowerOff : onClose} title="Close" />
+            <button className="rp-dot rp-dot--min"     onClick={isMinimized ? onMaximize : onMinimize} title={isMinimized ? 'Expand' : 'Minimise'} />
+            {!isMinimized && (
+              <button className="rp-dot rp-dot--full" onClick={() => setIsFullscreen(f => !f)} title={isFullscreen ? 'Restore' : 'Fullscreen'} />
+            )}
+            <span className="rp-chrome-title">
+              {isYouTube ? '📺 VIDEO' : '📼 TAPE DECK'}
+            </span>
+          </div>
+
+          {/* ╔══════════════════════════════════════════════════╗
+              ║  MINIMISED BAR                                   ║
+              ╚══════════════════════════════════════════════════╝ */}
+          {isMinimized && (
+            <div className="rp-minibar">
+              {/* Spinning disc */}
+              <div className={`rp-mini-disc ${isPlaying ? 'rp-mini-disc--spin' : ''}`}>
+                <div className="rp-mini-disc-rim" />
+                <div className="rp-mini-disc-hub" />
+              </div>
+
+              {/* Info */}
+              <div className="rp-mini-info">
+                <div className="rp-mini-title">{item.title}</div>
+                <div className="rp-mini-creator">{item.creator}</div>
+              </div>
+
+              {/* Mini waveform bars */}
+              <div className="rp-mini-wave" aria-hidden>
+                {Array.from({ length: 18 }).map((_, i) => (
+                  <span key={i} className={`rp-mini-wave-bar ${isPlaying ? 'rp-mini-wave-bar--live' : ''}`}
+                    style={{ animationDelay: `${(i * 0.08).toFixed(2)}s`, '--h': `${14 + Math.sin(i*0.95)*9}px` }}
+                  />
+                ))}
+              </div>
+
+              {/* Play / Pause */}
+              <button className="rp-mini-play" onClick={handlePlay} title={isPlaying ? 'Pause' : 'Play'}>
+                {isPlaying
+                  ? <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                  : <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                }
+              </button>
+
+              {/* Expand button */}
+              <button className="rp-mini-expand" onClick={onMaximize} title="Expand player">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <polyline points="15 3 21 3 21 9"/>
+                  <polyline points="9 21 3 21 3 15"/>
+                  <line x1="21" y1="3" x2="14" y2="10"/>
+                  <line x1="3" y1="21" x2="10" y2="14"/>
+                </svg>
+              </button>
+
+              {/* Close button */}
+              <button className="rp-mini-close" onClick={onClose} title="Close">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          )}
+
+          {/* ╔══════════════════════════════════════════════════╗
+              ║  YOUTUBE / CRT TV                                ║
+              ╚══════════════════════════════════════════════════╝ */}
+          {isYouTube && (
+            <div className={`crt-tv-wrapper ${isMinimized ? 'crt-tv-wrapper--audio-only' : ''}`}>
               <div className="crt-tv-body">
-                {/* Visual screen bezel framing */}
-                <div 
-                  className="crt-screen-bezel"
-                  style={{ aspectRatio }}
-                >
-                  <div className={`crt-screen-inner ${(youtubeId && isCleanScreen) ? 'clean-video-screen' : ''}`}>
-                    {/* Retro CRT Overlays: Rendered only when screen is not set to clean mode */}
-                    {(!youtubeId || !isCleanScreen) && (
-                      <>
-                        <div className="crt-scanlines-overlay" />
-                        <div className="crt-glass-reflection" />
-                        <div className="crt-screen-shadow" />
-                        <div className="crt-flicker-layer" />
-                      </>
-                    )}
-
-                    {/* YouTube Video iframe */}
-                    {youtubeId ? (
-                      <iframe
-                        ref={iframeRef}
-                        src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&controls=1&enablejsapi=1&rel=0&modestbranding=1`}
-                        title={item.title}
-                        className="crt-youtube-iframe"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen
-                      />
-                    ) : (
-                      <div className="crt-static-noise-screen">
-                        <div className="static-fuzz" />
-                        <div className="crt-center-message">NO SIGNAL</div>
-                      </div>
-                    )}
+                <div className="crt-screen-bezel" style={{ aspectRatio }}>
+                  <div className={`crt-screen-inner ${youtubeId && isCleanScreen ? 'clean-video-screen' : ''}`}>
+                    {(!youtubeId || !isCleanScreen) && (<>
+                      <div className="crt-scanlines-overlay" />
+                      <div className="crt-glass-reflection" />
+                      <div className="crt-screen-shadow" />
+                      <div className="crt-flicker-layer" />
+                    </>)}
+                    {youtubeId
+                      ? <iframe ref={iframeRef}
+                          src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&controls=1&enablejsapi=1&rel=0&modestbranding=1`}
+                          title={item.title} className="crt-youtube-iframe"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen />
+                      : <div className="crt-static-noise-screen">
+                          <div className="static-fuzz" />
+                          <div className="crt-center-message">NO SIGNAL</div>
+                        </div>
+                    }
                   </div>
                 </div>
-
-                {/* Cabinet control panel on the right side of the vintage TV */}
                 <div className="crt-tv-controls">
                   <div className="crt-tv-brand">PODTUBE 400</div>
-                  
-                  {/* Play/Pause Button */}
                   <div className="dial-group">
                     <label className="dial-label">PLAYBACK</label>
-                    <button 
-                      type="button"
-                      onClick={toggleYoutubePlay}
-                      className={`crt-tv-btn ${isPlaying ? 'playing' : 'paused'}`}
-                      title={isPlaying ? "Pause Video" : "Play Video"}
-                    >
-                      {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
+                    <button type="button" onClick={toggleYT} className={`crt-tv-btn ${isPlaying ? 'playing' : 'paused'}`}>
+                      {isPlaying ? <Pause size={16} fill="currentColor"/> : <Play size={16} fill="currentColor"/>}
                     </button>
-                    <span className="dial-status-text">{isPlaying ? "PLAYING" : "PAUSED"}</span>
+                    <span className="dial-status-text">{isPlaying ? 'PLAYING' : 'PAUSED'}</span>
                   </div>
-
-                  {/* CRT Filter Toggle Switch */}
                   <div className="dial-group">
                     <label className="dial-label">CRT FILTER</label>
-                    <button 
-                      type="button"
-                      className={`crt-theatre-switch ${!isCleanScreen ? 'switched-on' : 'switched-off'}`}
-                      onClick={() => setIsCleanScreen(!isCleanScreen)}
-                      title="Toggle CRT Filter"
-                    >
+                    <button type="button" className={`crt-theatre-switch ${!isCleanScreen ? 'switched-on' : 'switched-off'}`} onClick={() => setIsCleanScreen(s => !s)}>
                       <span className="switch-knob" />
                     </button>
-                    <span className="dial-status-text">{isCleanScreen ? "CLEAN" : "RETRO"}</span>
+                    <span className="dial-status-text">{isCleanScreen ? 'CLEAN' : 'RETRO'}</span>
                   </div>
-
-                  {/* Theatre Mode Toggle Switch */}
                   <div className="dial-group">
                     <label className="dial-label">THEATRE MODE</label>
-                    <button 
-                      type="button"
-                      className={`crt-theatre-switch ${isTheatreMode ? 'switched-on' : 'switched-off'}`}
-                      onClick={() => setIsTheatreMode(!isTheatreMode)}
-                      title="Toggle Theatre Mode"
-                    >
+                    <button type="button" className={`crt-theatre-switch ${isTheatreMode ? 'switched-on' : 'switched-off'}`} onClick={() => setIsTheatreMode(m => !m)}>
                       <span className="switch-knob" />
                     </button>
-                    <span className="dial-status-text">{isTheatreMode ? "CINEMA" : "NORMAL"}</span>
+                    <span className="dial-status-text">{isTheatreMode ? 'CINEMA' : 'NORMAL'}</span>
                   </div>
-
-                  {/* Aspect Ratio Rotary Dial */}
                   <div className="dial-group">
                     <label className="dial-label">ASPECT RATIO</label>
-                    <div 
-                      className="crt-rotary-dial small-dial" 
-                      onClick={cycleAspectRatio}
-                      title="Rotate to change aspect ratio"
-                      style={{ 
-                        transform: `rotate(${
-                          aspectRatio === '4/3' ? 0 : aspectRatio === '16/9' ? 120 : 240
-                        }deg)` 
-                      }}
-                    >
+                    <div className="crt-rotary-dial small-dial" onClick={cycleAR}
+                      style={{ transform: `rotate(${aspectRatio==='4/3'?0:aspectRatio==='16/9'?120:240}deg)` }}>
                       <div className="dial-notch" />
                     </div>
-                    <span className="dial-status-text">
-                      {aspectRatio === '4/3' ? "4:3 (STD)" : aspectRatio === '16/9' ? "16:9 (WIDE)" : "21:9 (CINE)"}
-                    </span>
+                    <span className="dial-status-text">{aspectRatio==='4/3'?'4:3 (STD)':aspectRatio==='16/9'?'16:9 (WIDE)':'21:9 (CINE)'}</span>
                   </div>
-
-                  {/* Red Power Switch Indicator */}
                   <div className="crt-power-section">
-                    <button 
-                      className={`crt-power-button ${isPoweringOff ? 'off' : 'on'}`}
-                      onClick={triggerPowerOff}
-                      title="Tactile Power Switch"
-                    >
-                      {isPoweringOff ? '●' : 'I/O'}
-                    </button>
+                    <button className={`crt-power-button ${isPoweringOff?'off':'on'}`} onClick={triggerPowerOff}>{isPoweringOff?'●':'I/O'}</button>
                     <span className="crt-power-label">POWER</span>
-                    <div className={`crt-power-led ${isPoweringOff ? 'led-off' : 'led-on'}`} />
+                    <div className={`crt-power-led ${isPoweringOff?'led-off':'led-on'}`} />
                   </div>
                 </div>
               </div>
               <div className="crt-cabinet-feet">
-                <div className="foot left-foot" />
-                <div className="foot right-foot" />
+                <div className="foot left-foot" /><div className="foot right-foot" />
               </div>
-            </div>
-          ) : (
-            /* ==============================================================
-               2. REEL-TO-REEL TAPE DECK INTERFACE (PODCAST MODAL)
-               ============================================================== */
-            <div className="tape-deck-wrapper">
-              {/* Wooden Cabinet Bezel outline */}
-              <div className="tape-deck-faceplate">
-                
-                {/* Header branding */}
-                <div className="tape-deck-header">
-                  <span className="brand-logo">🎙️ AMPEX RETRO-900</span>
-                  <div className="tape-deck-stats">
-                    <span className="tape-tag">HIGH BIAS</span>
-                    <span className="tape-tag">DOLBY B-C NR</span>
-                  </div>
-                </div>
-
-                {/* 1. Two Rotating Tape Reels */}
-                <div className="tape-reels-assembly">
-                  {/* Left Tape Reel */}
-                  <div className="reel-shaft left-shaft">
-                    <div id="reel-left" className="tape-reel">
-                      <div className="reel-center" />
-                      <div className="reel-spoke spoke-1" />
-                      <div className="reel-spoke spoke-2" />
-                      <div className="reel-spoke spoke-3" />
-                      {/* The brown magnetic tape buildup */}
-                      <div className="magnetic-tape-wrap" style={{ width: '82%', height: '82%' }} />
-                    </div>
-                  </div>
-
-                  {/* Right Tape Reel */}
-                  <div className="reel-shaft right-shaft">
-                    <div id="reel-right" className="tape-reel">
-                      <div className="reel-center" />
-                      <div className="reel-spoke spoke-1" />
-                      <div className="reel-spoke spoke-2" />
-                      <div className="reel-spoke spoke-3" />
-                      {/* Magnetic tape builds up on right as tape plays, here we keep it equal for symmetry */}
-                      <div className="magnetic-tape-wrap" style={{ width: '65%', height: '65%' }} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Tape path rollers guides */}
-                <div className="tape-guide-rollers">
-                  <div className="roller left-roller" />
-                  <div className="tape-line" />
-                  <div className="roller right-roller" />
-                </div>
-
-                {/* 2. Middle Panel: Spotify Embed Player & Oscilloscope */}
-                <div className="tape-middle-row">
-                  {/* Spotify/Apple embedded widget / fallback info panel */}
-                  <div className="tape-embed-container">
-                    {spotifyId ? (
-                      <div ref={spotifyPlaceholderRef} style={{ width: '100%', height: '152px' }} />
-                    ) : appleEmbedUrl ? (
-                      <iframe
-                        src={appleEmbedUrl}
-                        width="100%"
-                        height="152"
-                        frameBorder="0"
-                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                        style={{ borderRadius: 'var(--radius-sm)', border: 'none' }}
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="podcast-fallback-panel">
-                        <Radio size={28} className="fallback-podcast-icon animate-pulse" />
-                        <div className="fallback-title-text">{item.title}</div>
-                        <a 
-                          href={item.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="btn-retro btn-retro-primary fallback-visit-btn"
-                        >
-                          OPEN LINK DIRECTLY
-                        </a>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Glowing Green Oscilloscope */}
-                  <div className="oscilloscope-panel">
-                    <canvas 
-                      ref={canvasRef} 
-                      width="180" 
-                      height="90" 
-                      className="oscilloscope-canvas"
-                    />
-                    <div className="panel-label">SIGNAL OSCILLOSCOPE</div>
-                  </div>
-                </div>
-
-                {/* 3. Bottom Row: Analog VU meters and Control Panel */}
-                <div className="tape-bottom-row">
-                  {/* Dual VU needle meters */}
-                  <div className="vu-meters-assembly">
-                    <div className="vu-meter-case">
-                      <div className="vu-meter-glass">
-                        <div className="vu-arc-scale" />
-                        <div id="vu-needle-left" className="vu-needle" />
-                        <div className="vu-meter-label">L CH</div>
-                      </div>
-                    </div>
-                    <div className="vu-meter-case">
-                      <div className="vu-meter-glass">
-                        <div className="vu-arc-scale" />
-                        <div id="vu-needle-right" className="vu-needle" />
-                        <div className="vu-meter-label">R CH</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Audio Controls */}
-                  <div className="tape-transport-controls">
-                    <button 
-                      onClick={isPlaying ? handleTapePause : handleTapePlay}
-                      className={`tape-btn ${isPlaying ? 'active-play' : ''}`}
-                      title={isPlaying ? "Pause Tape" : "Play Tape"}
-                    >
-                      {isPlaying ? <Pause size={14} /> : <Play size={14} />}
-                      <span className="btn-legend">{isPlaying ? "PAUSE" : "PLAY"}</span>
-                    </button>
-
-                    <button 
-                      onClick={handleTapePause}
-                      className={`tape-btn ${!isPlaying ? 'active-stop' : ''}`}
-                      title="Stop Tape"
-                    >
-                      <Square size={14} />
-                      <span className="btn-legend">STOP</span>
-                    </button>
-
-                    <button 
-                      onClick={handleTapeMute}
-                      className={`tape-btn ${isMuted ? 'active-mute' : ''}`}
-                      title="Toggle Tape Hiss Noise"
-                    >
-                      {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-                      <span className="btn-legend">{isMuted ? "UNMUTE" : "MUTE HISS"}</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="tape-instruction-note">
-                  📻 RETRO TAPE DECK ACTIVE // FOR SPOTIFY/APPLE, CLICK PLAY DIRECTLY INSIDE THE EMBEDDED PLAYER IF AUDIO CONTROLS ARE DE-SYNCED
-                </div>
-
-              </div>
-              <div className="tape-deck-wood-sides" />
             </div>
           )}
+
+          {/* ╔══════════════════════════════════════════════════╗
+              ║  PODCAST TAPE DECK  (NEW DESIGN)                 ║
+              ╚══════════════════════════════════════════════════╝ */}
+          {!isYouTube && (
+            <div className={`rp-tape-deck ${isMinimized ? 'rp-tape-deck--hidden' : ''}`}>
+
+              {/* ── Brand bar ──────────────────────────────────── */}
+              <div className="rp-deck-header">
+                <div className="rp-deck-leds">
+                  <span className="rp-led rp-led--power" />
+                  <span className={`rp-led rp-led--play ${isPlaying ? 'rp-led--active' : ''}`} />
+                  <span className="rp-led-label">AMPEX · RETRO-900</span>
+                </div>
+                <div className="rp-deck-badges">
+                  <span className="rp-badge">HIGH BIAS</span>
+                  <span className="rp-badge">DOLBY NR</span>
+                  <span className={`rp-badge rp-badge--status ${isPlaying ? 'rp-badge--play' : 'rp-badge--pause'}`}>
+                    {isPlaying ? '▶ PLAYING' : '⏸ PAUSED'}
+                  </span>
+                </div>
+              </div>
+
+              {/* ── Cassette window ────────────────────────────── */}
+              <div className="rp-cassette-body">
+                <div className="rp-cassette-shell">
+                  <div className="rp-screw rp-screw--tl" /><div className="rp-screw rp-screw--tr" />
+                  <div className="rp-screw rp-screw--bl" /><div className="rp-screw rp-screw--br" />
+                  <div className="rp-cassette-window">
+                    <div className="rp-cassette-window-glass">
+                      <ReelSVG />
+                    </div>
+                  </div>
+                  <div className="rp-cassette-label">
+                    <div className="rp-cassette-label-title">{item.title}</div>
+                    <div className="rp-cassette-label-sub">{item.creator} · TYPE II · C-90</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Embed player — always mounted so audio keeps playing ── */}
+              <div className="rp-embed">
+                {spotifyId
+                  ? <div ref={spotifyWrapperRef} style={{ width:'100%', height:'152px' }} />
+                  : appleUrl
+                  ? <iframe key={iframeKey} src={appleUrl} width="100%" height="152" frameBorder="0"
+                      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                      style={{ borderRadius:'10px', border:'none' }} loading="lazy" />
+                  : <div className="rp-fallback">
+                      <Radio size={26} className="rp-fallback-icon" />
+                      <p className="rp-fallback-title">{item.title}</p>
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="rp-fallback-link">
+                        Open in browser →
+                      </a>
+                    </div>
+                }
+              </div>
+
+              {/* ── Bottom controls ────────────────────────────── */}
+              <div className="rp-deck-bottom">
+                <div className="rp-osc-panel">
+                  <div className="rp-osc-specs">
+                    <span className="rp-osc-spec"><em>SR</em> 256 Hz</span>
+                    <span className="rp-osc-spec"><em>FREQ</em> 0.5–35 Hz</span>
+                    <span className="rp-osc-spec"><em>AMP</em> ±75 µV</span>
+                  </div>
+                  <canvas ref={canvasRef} width="200" height="75" className="rp-osc-canvas" />
+                  <div className="rp-osc-label">OSC · 256 Hz</div>
+                </div>
+                <button className={`rp-play-btn ${isPlaying ? 'rp-play-btn--active' : ''}`} onClick={handlePlay} title={isPlaying ? 'Pause' : 'Play'}>
+                  <div className="rp-play-btn-ring" />
+                  <div className="rp-play-btn-face">
+                    {isPlaying
+                      ? <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                      : <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    }
+                  </div>
+                </button>
+                <div className="rp-vu-pair">
+                  {['left', 'right'].map(ch => (
+                    <div key={ch} className="rp-vu">
+                      <div className="rp-vu-glass">
+                        <div className="rp-vu-arc" />
+                        <div id={`vu-needle-${ch}`} className="rp-vu-needle" />
+                        <div className="rp-vu-scale" />
+                      </div>
+                      <div className="rp-vu-ch">{ch === 'left' ? 'L' : 'R'}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rp-footer">Audio Player</div>
+            </div>
+          )}
+
         </motion.div>
       </AnimatePresence>
     </div>

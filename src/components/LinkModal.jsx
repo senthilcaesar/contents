@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mic, Video, Sparkles, AlertCircle } from 'lucide-react';
+import { X, Mic, Video, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
   const [title, setTitle] = useState('');
@@ -15,6 +15,8 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
   
   const [errors, setErrors] = useState({});
   const [hasManuallySelectedType, setHasManuallySelectedType] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  const [fetchNote, setFetchNote] = useState('');
 
   // Sync state when modal opens or editItem changes
   useEffect(() => {
@@ -78,6 +80,75 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
     setHasManuallySelectedType(true);
   };
 
+  // ── YouTube metadata auto-extraction ──────────────────────────────
+  const isYouTubeUrl = (u) => /youtube\.com|youtu\.be/.test((u || '').toLowerCase());
+
+  const extractYouTubeId = (u) => {
+    const m = (u || '').match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
+    return m && m[2].length === 11 ? m[2] : null;
+  };
+
+  // Pull title / creator / description from a YouTube URL.
+  // Uses the Data API (all 3 fields) when VITE_YOUTUBE_API_KEY is set,
+  // otherwise falls back to the key-free oEmbed endpoint (title + creator).
+  const fetchYouTubeMetadata = async ({ force = false } = {}) => {
+    const target = url.trim();
+    if (!target || !isYouTubeUrl(target) || isFetching) return;
+
+    setIsFetching(true);
+    setFetchNote('');
+
+    try {
+      const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
+      let meta = null;
+
+      if (apiKey) {
+        const id = extractYouTubeId(target);
+        if (id) {
+          const res = await fetch(
+            `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${id}&key=${apiKey}`
+          );
+          if (res.ok) {
+            const json = await res.json();
+            const s = json.items?.[0]?.snippet;
+            if (s) meta = { title: s.title, creator: s.channelTitle, description: s.description };
+          }
+        }
+      }
+
+      // Fallback: oEmbed (no description, but no API key required)
+      if (!meta) {
+        const res = await fetch(
+          `https://www.youtube.com/oembed?url=${encodeURIComponent(target)}&format=json`
+        );
+        if (!res.ok) throw new Error('unreachable');
+        const json = await res.json();
+        meta = { title: json.title, creator: json.author_name, description: '' };
+      }
+
+      // Apply — overwrite on explicit click, otherwise only fill empty fields
+      setType('youtube');
+      setHasManuallySelectedType(true);
+      if (meta.title && (force || !title.trim())) {
+        setTitle(meta.title);
+        if (errors.title) setErrors((prev) => ({ ...prev, title: null }));
+      }
+      if (meta.creator && (force || !creator.trim())) setCreator(meta.creator);
+      if (meta.description && (force || !description.trim())) setDescription(meta.description);
+
+      setFetchNote('Details filled from YouTube.');
+    } catch (_) {
+      setFetchNote("Couldn't fetch details — please enter them manually.");
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
+  // Auto-fetch when the user finishes entering a YouTube URL (fills blanks only)
+  const handleUrlBlur = () => {
+    if (isYouTubeUrl(url)) fetchYouTubeMetadata();
+  };
+
   // Basic URL Validation
   const isValidUrl = (string) => {
     try {
@@ -132,7 +203,7 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="modal-overlay-container">
+        <div className="modal-overlay-container modal-overlay-container--drawer">
           {/* Backdrop Blur */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -142,13 +213,13 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
             className="modal-backdrop"
           />
 
-          {/* Modal Container */}
+          {/* Slide-in Drawer */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-            className="modal-box glass-panel"
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+            className="modal-box modal-box--drawer glass-panel"
           >
             {/* Modal Header */}
             <div className="modal-header">
@@ -187,23 +258,39 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
               {/* URL */}
               <div className="form-group">
                 <label htmlFor="modal-url" className="form-label">URL *</label>
-                <input
-                  id="modal-url"
-                  type="text"
-                  value={url}
-                  onChange={handleUrlChange}
-                  className={`form-input ${errors.url ? 'input-error' : ''}`}
-                />
+                <div className="url-input-row">
+                  <input
+                    id="modal-url"
+                    type="text"
+                    value={url}
+                    onChange={handleUrlChange}
+                    onBlur={handleUrlBlur}
+                    className={`form-input ${errors.url ? 'input-error' : ''}`}
+                  />
+                  <button
+                    type="button"
+                    className="btn-autofill"
+                    onClick={() => fetchYouTubeMetadata({ force: true })}
+                    disabled={isFetching || !isYouTubeUrl(url)}
+                    title="Auto-fill title, creator & description from YouTube"
+                  >
+                    {isFetching
+                      ? <Loader2 size={15} className="autofill-spin" />
+                      : <Sparkles size={15} />}
+                    <span>{isFetching ? 'Fetching…' : 'Auto-fill'}</span>
+                  </button>
+                </div>
                 {errors.url && (
                   <span className="error-message">
                     <AlertCircle size={14} />
                     {errors.url}
                   </span>
                 )}
+                {fetchNote && <span className="fetch-note">{fetchNote}</span>}
               </div>
 
               {/* Title */}
-              <div className="form-group">
+              <div className="form-group form-group--half">
                 <label htmlFor="modal-title" className="form-label">Title *</label>
                 <input
                   id="modal-title"
@@ -224,7 +311,7 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
               </div>
 
               {/* Creator */}
-              <div className="form-group">
+              <div className="form-group form-group--half">
                 <label htmlFor="modal-creator" className="form-label">Creator / Channel Name</label>
                 <input
                   id="modal-creator"
@@ -236,7 +323,7 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
               </div>
 
               {/* Status */}
-              <div className="form-group">
+              <div className="form-group form-group--half">
                 <label htmlFor="modal-status" className="form-label">Status</label>
                 <select
                   id="modal-status"
@@ -251,7 +338,7 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
               </div>
 
               {/* Priority */}
-              <div className="form-group">
+              <div className="form-group form-group--half">
                 <label htmlFor="modal-priority" className="form-label">Priority</label>
                 <select
                   id="modal-priority"
