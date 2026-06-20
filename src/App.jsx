@@ -103,6 +103,18 @@ export default function App() {
       setIsPlayerMinimized(true);
     }
   }, [activePlayerItem]);
+
+  // Preload the Spotify IFrame API at startup so that when a podcast is opened
+  // the controller initialises fast — giving best-effort autoplay a chance to
+  // run inside the browser's user-activation window.
+  useEffect(() => {
+    if (document.getElementById('spotify-iframe-api')) return;
+    const s = document.createElement('script');
+    s.id = 'spotify-iframe-api';
+    s.src = 'https://open.spotify.com/embed/iframe-api/v1';
+    s.async = true;
+    document.body.appendChild(s);
+  }, []);
   
   const [toasts, setToasts] = useState([]);
 

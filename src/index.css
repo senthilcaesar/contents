@@ -2918,24 +2918,36 @@ h1, h2, h3, h4 {
   margin-top: 1px;
 }
 
-.rp-mini-wave {
+/* ── Mini play button with progress ring ──────────────────────────── */
+.rp-mini-play-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
-  gap: 2.5px;
-  height: 32px;
-  flex-shrink: 0;
+  justify-content: center;
 }
-.rp-mini-wave-bar {
-  width: 3px;
-  height: var(--h, 10px);
-  border-radius: 2px;
-  background: rgba(0,255,157,0.2);
-  transition: background 0.3s;
+.rp-mini-ring {
+  position: absolute;
+  inset: 0;
+  width: 44px;
+  height: 44px;
+  transform: rotate(-90deg);
+  pointer-events: none;
 }
-.rp-mini-wave-bar--live {
-  background: #00ff9d;
-  animation: mini-bar-bounce 0.9s ease-in-out infinite alternate;
-  box-shadow: 0 0 4px rgba(0,255,157,0.45);
+.rp-mini-ring-track {
+  fill: none;
+  stroke: rgba(245,158,11,0.15);
+  stroke-width: 2.5;
+}
+.rp-mini-ring-fill {
+  fill: none;
+  stroke: #f59e0b;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 3px rgba(245,158,11,0.55));
+  transition: stroke-dashoffset 0.3s linear;
 }
 
 .rp-mini-play {
@@ -3298,16 +3310,15 @@ h1, h2, h3, h4 {
 }
 
 /* ── Hidden tape deck — keeps embed in DOM so audio continues ────── */
+/* Keep the deck (and its live Spotify/Apple iframe) fully mounted & full-size
+   while minimised — just parked off-screen. Collapsing it or using
+   visibility:hidden stops the embedded player, which prevented audio from
+   starting until the player was expanded. */
 .rp-tape-deck--hidden {
-  position: absolute;
-  left: -9999px;
-  top: -9999px;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
+  position: fixed;
+  left: -99999px;
+  top: 0;
   pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
 }
 
 /* ── Minibar expand & close buttons ─────────────────────────────── */

@@ -11,10 +11,14 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
   const [aspectRatio, setAspectRatio] = useState('16/9');
   const [iframeKey, setIframeKey] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [progress, setProgress] = useState(0); // 0..1 playback progress for mini ring
 
   useEffect(() => {
     if (isMinimized) setIsFullscreen(false);
   }, [isMinimized]);
+
+  // Reset progress when the playing item changes
+  useEffect(() => { setProgress(0); }, [item.url]);
 
   // Animation refs
   const canvasRef     = useRef(null);
@@ -79,9 +83,23 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
         if (cancelled) { ctrl?.destroy?.(); return; }
         localCtrl = ctrl;
         embedControllerRef.current = ctrl;
+        let started = false;          // becomes true once audio is actually rolling
+        let autoplayRetried = false;  // best-effort autoplay: retry once if still paused
         ctrl.addListener('playback_update', ({ data }) => {
-          setIsPlaying(!data.isPaused && !data.isBuffering);
-          if (data.duration > 0) progressRef.current = data.position / data.duration;
+          const playing = !data.isPaused && !data.isBuffering;
+          if (playing) started = true;
+          setIsPlaying(playing);
+          if (data.duration > 0) {
+            const p = data.position / data.duration;
+            progressRef.current = p;
+            setProgress(Math.min(1, p));
+          }
+          // If the embed loaded paused (autoplay blocked/ignored), try once more
+          // while we may still be inside the browser's user-activation window.
+          if (!started && !autoplayRetried && data.isPaused) {
+            autoplayRetried = true;
+            ctrl.play();
+          }
         });
         ctrl.play();
       });
@@ -105,6 +123,23 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
       if (spotifyWrapperRef.current) spotifyWrapperRef.current.innerHTML = '';
     };
   }, [isYouTube, spotifyId]);
+
+  // ── YouTube progress tracking (for mini progress ring) ───────────────────
+  useEffect(() => {
+    if (!isYouTube) return;
+    const onMsg = (e) => {
+      if (typeof e.data !== 'string' || !/youtube\.com/.test(e.origin)) return;
+      try {
+        const d = JSON.parse(e.data);
+        if (d.event === 'infoDelivery' && d.info &&
+            d.info.duration > 0 && d.info.currentTime != null) {
+          setProgress(Math.min(1, d.info.currentTime / d.info.duration));
+        }
+      } catch { /* ignore non-JSON messages */ }
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, [isYouTube]);
 
   // ── Animation loop (podcast only) ────────────────────────────────────────
   useEffect(() => {
@@ -226,6 +261,13 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
     );
   };
 
+  // Tell the YT iframe to start emitting infoDelivery (progress) events
+  const startYTListening = () => {
+    iframeRef.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*'
+    );
+  };
+
   const handlePlay = () => {
     if (isYouTube) toggleYT();
     else if (embedControllerRef.current) embedControllerRef.current.togglePlay();
@@ -233,6 +275,9 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
   };
 
   const cycleAR = () => setAspectRatio(p => p === '16/9' ? '21/9' : p === '21/9' ? '4/3' : '16/9');
+
+  // Circumference of the mini progress ring (r = 20)
+  const RING_C = 2 * Math.PI * 20;
 
   // ── Cassette SVG ─────────────────────────────────────────────────────────
   const CX_L = 130, CX_R = 470, CY = 100;
@@ -438,22 +483,20 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
                 <div className="rp-mini-creator">{item.creator}</div>
               </div>
 
-              {/* Mini waveform bars */}
-              <div className="rp-mini-wave" aria-hidden>
-                {Array.from({ length: 18 }).map((_, i) => (
-                  <span key={i} className={`rp-mini-wave-bar ${isPlaying ? 'rp-mini-wave-bar--live' : ''}`}
-                    style={{ animationDelay: `${(i * 0.08).toFixed(2)}s`, '--h': `${14 + Math.sin(i*0.95)*9}px` }}
-                  />
-                ))}
+              {/* Play / Pause with progress ring */}
+              <div className="rp-mini-play-wrap">
+                <svg className="rp-mini-ring" viewBox="0 0 44 44" aria-hidden="true">
+                  <circle className="rp-mini-ring-track" cx="22" cy="22" r="20" />
+                  <circle className="rp-mini-ring-fill" cx="22" cy="22" r="20"
+                    style={{ strokeDasharray: RING_C, strokeDashoffset: RING_C * (1 - progress) }} />
+                </svg>
+                <button className="rp-mini-play" onClick={handlePlay} title={isPlaying ? 'Pause' : 'Play'}>
+                  {isPlaying
+                    ? <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                    : <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  }
+                </button>
               </div>
-
-              {/* Play / Pause */}
-              <button className="rp-mini-play" onClick={handlePlay} title={isPlaying ? 'Pause' : 'Play'}>
-                {isPlaying
-                  ? <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                  : <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                }
-              </button>
 
               {/* Expand button */}
               <button className="rp-mini-expand" onClick={onMaximize} title="Expand player">
@@ -494,6 +537,7 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
                           src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&controls=1&enablejsapi=1&rel=0&modestbranding=1`}
                           title={item.title} className="crt-youtube-iframe"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          onLoad={startYTListening}
                           allowFullScreen />
                       : <div className="crt-static-noise-screen">
                           <div className="static-fuzz" />
