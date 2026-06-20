@@ -9,6 +9,9 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
   const [creator, setCreator] = useState('');
   const [description, setDescription] = useState('');
   const [tagsInput, setTagsInput] = useState('');
+  const [status, setStatus] = useState('Pending');
+  const [priority, setPriority] = useState('Medium');
+  const [color, setColor] = useState('default');
   
   const [errors, setErrors] = useState({});
   const [hasManuallySelectedType, setHasManuallySelectedType] = useState(false);
@@ -23,6 +26,9 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
         setCreator(editItem.creator || '');
         setDescription(editItem.description || '');
         setTagsInput(editItem.tags ? editItem.tags.join(', ') : '');
+        setStatus(editItem.status || 'Pending');
+        setPriority(editItem.priority || 'Medium');
+        setColor(editItem.color || 'default');
         setHasManuallySelectedType(true);
       } else {
         // Reset to default empty state
@@ -32,6 +38,9 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
         setCreator('');
         setDescription('');
         setTagsInput('');
+        setStatus('Pending');
+        setPriority('Medium');
+        setColor('default');
         setHasManuallySelectedType(false);
       }
       setErrors({});
@@ -112,6 +121,9 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
       creator: creator.trim() || 'Unknown',
       description: description.trim(),
       tags,
+      status,
+      priority,
+      color,
     });
 
     onClose();
@@ -221,6 +233,65 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
                   onChange={(e) => setCreator(e.target.value)}
                   className="form-input"
                 />
+              </div>
+
+              {/* Status */}
+              <div className="form-group">
+                <label htmlFor="modal-status" className="form-label">Status</label>
+                <select
+                  id="modal-status"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="form-select"
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Done">Done</option>
+                </select>
+              </div>
+
+              {/* Priority */}
+              <div className="form-group">
+                <label htmlFor="modal-priority" className="form-label">Priority</label>
+                <select
+                  id="modal-priority"
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value)}
+                  className="form-select"
+                >
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                </select>
+              </div>
+
+              {/* Card Background Accent */}
+              <div className="form-group">
+                <span className="form-label">Card Background Accent</span>
+                <div className="color-swatch-container">
+                  {[
+                    { id: 'default', label: 'Default' },
+                    { id: 'red', label: 'Red' },
+                    { id: 'orange', label: 'Orange' },
+                    { id: 'yellow', label: 'Yellow' },
+                    { id: 'green', label: 'Green' },
+                    { id: 'teal', label: 'Teal' },
+                    { id: 'skyblue', label: 'Sky Blue' },
+                    { id: 'blue', label: 'Blue' },
+                    { id: 'navyblue', label: 'Navy Blue' },
+                    { id: 'purple', label: 'Purple' },
+                    { id: 'pink', label: 'Pink' },
+                    { id: 'platinumgray', label: 'Platinum Gray' },
+                    { id: 'brown', label: 'Brown' }
+                  ].map((opt) => (
+                    <div
+                      key={opt.id}
+                      className={`color-swatch swatch-${opt.id} ${color === opt.id ? 'selected' : ''}`}
+                      onClick={() => setColor(opt.id)}
+                      title={opt.label}
+                    />
+                  ))}
+                </div>
               </div>
 
               {/* Description */}

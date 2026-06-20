@@ -8,6 +8,7 @@ import LinkModal from './components/LinkModal';
 import DeleteConfirmationModal from './components/DeleteConfirmationModal';
 import TechStackModal from './components/TechStackModal';
 import ToastContainer from './components/Toast';
+import RetroPlayer from './components/RetroPlayer';
 
 // Import Firebase config and hooks
 import { 
@@ -41,6 +42,8 @@ const INITIAL_LINKS = [
     creator: 'Veritasium',
     description: 'An exploration of human biases, dual-process theory, and the cognitive tricks our brains play to save energy.',
     tags: ['science', 'psychology', 'learning'],
+    status: 'Done',
+    priority: 'High',
   },
   {
     id: 'init-2',
@@ -50,6 +53,8 @@ const INITIAL_LINKS = [
     creator: 'Lex Fridman Podcast',
     description: 'A deep-dive conversation about neural networks, artificial general intelligence (AGI), safety alignment, and human consciousness.',
     tags: ['ai', 'tech', 'philosophy'],
+    status: 'In Progress',
+    priority: 'Medium',
   },
   {
     id: 'init-3',
@@ -59,6 +64,8 @@ const INITIAL_LINKS = [
     creator: 'Marques Brownlee',
     description: 'Reviewing next-generation rollable displays, under-display cameras, and the modular software paradigms defining modern pocket computers.',
     tags: ['tech', 'gadgets', 'design'],
+    status: 'Pending',
+    priority: 'Low',
   },
   {
     id: 'init-4',
@@ -68,6 +75,8 @@ const INITIAL_LINKS = [
     creator: 'Huberman Lab',
     description: 'Neurologist Dr. Andrew Huberman shares actionable scientific protocols for optimizing sleep quality, circadian alignment, and cognitive function.',
     tags: ['health', 'science', 'lifestyle'],
+    status: 'Pending',
+    priority: 'Medium',
   }
 ];
 
@@ -85,6 +94,7 @@ export default function App() {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLink, setEditingLink] = useState(null);
+  const [activePlayerItem, setActivePlayerItem] = useState(null);
   
   const [toasts, setToasts] = useState([]);
 
@@ -244,6 +254,32 @@ export default function App() {
     setEditingLink(null);
   };
 
+  // Update status field of an item
+  const handleUpdateStatus = async (id, status) => {
+    if (!currentUser) return;
+    try {
+      const docRef = doc(db, 'users', currentUser.uid, 'links', id);
+      await updateDoc(docRef, { status });
+      triggerToast('Status updated!', 'success');
+    } catch (err) {
+      console.error('Update status error:', err);
+      triggerToast('Failed to update status: ' + err.message, 'error');
+    }
+  };
+
+  // Update priority field of an item
+  const handleUpdatePriority = async (id, priority) => {
+    if (!currentUser) return;
+    try {
+      const docRef = doc(db, 'users', currentUser.uid, 'links', id);
+      await updateDoc(docRef, { priority });
+      triggerToast('Priority updated!', 'success');
+    } catch (err) {
+      console.error('Update priority error:', err);
+      triggerToast('Failed to update priority: ' + err.message, 'error');
+    }
+  };
+
   // Open Delete Confirmation Modal
   const handleDeleteLink = (id) => {
     setDeletingLinkId(id);
@@ -302,7 +338,9 @@ export default function App() {
           link.title.toLowerCase().includes(query) ||
           link.creator.toLowerCase().includes(query) ||
           (link.description && link.description.toLowerCase().includes(query)) ||
-          link.tags.some((tag) => tag.toLowerCase().includes(query))
+          link.tags.some((tag) => tag.toLowerCase().includes(query)) ||
+          (link.status && link.status.toLowerCase().includes(query)) ||
+          (link.priority && link.priority.toLowerCase().includes(query))
       );
     }
 
@@ -446,7 +484,10 @@ export default function App() {
                     item={link}
                     onEdit={handleEditClick}
                     onDelete={handleDeleteLink}
+                    onUpdateStatus={handleUpdateStatus}
+                    onUpdatePriority={handleUpdatePriority}
                     viewMode={viewMode}
+                    onPlay={setActivePlayerItem}
                   />
                 ))}
               </AnimatePresence>
@@ -503,6 +544,14 @@ export default function App() {
 
       {/* Toast Notification HUD */}
       <ToastContainer toasts={toasts} onClose={removeToast} />
+
+      {/* Retro Immersive Player */}
+      {activePlayerItem && (
+        <RetroPlayer
+          item={activePlayerItem}
+          onClose={() => setActivePlayerItem(null)}
+        />
+      )}
     </div>
   );
 }

@@ -41,6 +41,54 @@
   --error-bg: rgba(231, 130, 132, 0.08);
   --success: #a6d189;          /* Green */
   
+  /* Status Colors */
+  --status-pending: #a5adce;       /* Subtext 0 (Muted / Slate) */
+  --status-pending-bg: rgba(165, 173, 206, 0.08);
+  --status-pending-border: rgba(165, 173, 206, 0.25);
+  --status-inprogress: #e5c890;    /* Yellow */
+  --status-inprogress-bg: rgba(229, 200, 144, 0.08);
+  --status-inprogress-border: rgba(229, 200, 144, 0.25);
+  --status-done: #a6d189;          /* Green */
+  --status-done-bg: rgba(166, 209, 137, 0.08);
+  --status-done-border: rgba(166, 209, 137, 0.25);
+
+  /* Card Background Colors (Curated Accent Colors) */
+  --card-bg-red: #3c2a2e;
+  --card-border-red: #8f4b52;
+  --card-bg-orange: #3d2e2a;
+  --card-border-orange: #915944;
+  --card-bg-yellow: #3d372a;
+  --card-border-yellow: #917744;
+  --card-bg-green: #2d362e;
+  --card-border-green: #4d7a57;
+  --card-bg-teal: #2a3834;
+  --card-border-teal: #488270;
+  --card-bg-skyblue: #2a363b;
+  --card-border-skyblue: #4b778c;
+  --card-bg-blue: #2a303d;
+  --card-border-blue: #4b5c8f;
+  --card-bg-navyblue: #222436;
+  --card-border-navyblue: #3f4c7a;
+  --card-bg-purple: #352a3d;
+  --card-border-purple: #6a4c7d;
+  --card-bg-pink: #3d2a36;
+  --card-border-pink: #914a77;
+  --card-bg-platinumgray: #3a3d42;
+  --card-border-platinumgray: #6d737d;
+  --card-bg-brown: #342c28;
+  --card-border-brown: #7a5948;
+
+  /* Priority Colors */
+  --priority-high: #ca9ee6;
+  --priority-high-bg: rgba(202, 158, 230, 0.08);
+  --priority-high-border: rgba(202, 158, 230, 0.25);
+  --priority-medium: #e5c890;
+  --priority-medium-bg: rgba(229, 200, 144, 0.08);
+  --priority-medium-border: rgba(229, 200, 144, 0.25);
+  --priority-low: #85c1dc;
+  --priority-low-bg: rgba(133, 193, 220, 0.08);
+  --priority-low-border: rgba(133, 193, 220, 0.25);
+  
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
@@ -90,6 +138,54 @@
   --error: #a93c30;
   --error-bg: #f4eae7;
   --success: #607d67;
+  
+  /* Status Colors */
+  --status-pending: #5e6358;       /* Muted charcoal */
+  --status-pending-bg: rgba(94, 99, 88, 0.08);
+  --status-pending-border: rgba(94, 99, 88, 0.25);
+  --status-inprogress: #b0703c;    /* Terracotta amber/bronze */
+  --status-inprogress-bg: rgba(176, 112, 60, 0.08);
+  --status-inprogress-border: rgba(176, 112, 60, 0.25);
+  --status-done: #607d67;          /* Olive green */
+  --status-done-bg: rgba(96, 125, 103, 0.08);
+  --status-done-border: rgba(96, 125, 103, 0.25);
+
+  /* Card Background Colors (Curated Accent Colors) */
+  --card-bg-red: #f8eee9;
+  --card-border-red: #dec1bc;
+  --card-bg-orange: #f8efe6;
+  --card-border-orange: #dec6b1;
+  --card-bg-yellow: #f8f2e7;
+  --card-border-yellow: #dec39a;
+  --card-bg-green: #ebf2ec;
+  --card-border-green: #b9ccbf;
+  --card-bg-teal: #e7f2f0;
+  --card-border-teal: #b1ded5;
+  --card-bg-skyblue: #e8f0f3;
+  --card-border-skyblue: #b1d1de;
+  --card-bg-blue: #e6eaf0;
+  --card-border-blue: #a9b8cc;
+  --card-bg-navyblue: #dfe4ea;
+  --card-border-navyblue: #9ca6bf;
+  --card-bg-purple: #f0eaf1;
+  --card-border-purple: #c5b9cc;
+  --card-bg-pink: #f6eaf0;
+  --card-border-pink: #d9acc8;
+  --card-bg-platinumgray: #edf0f2;
+  --card-border-platinumgray: #c4cbd1;
+  --card-bg-brown: #ece8e5;
+  --card-border-brown: #c5b6ae;
+
+  /* Priority Colors */
+  --priority-high: #9b59b6;
+  --priority-high-bg: rgba(155, 89, 182, 0.08);
+  --priority-high-border: rgba(155, 89, 182, 0.25);
+  --priority-medium: #b0703c;
+  --priority-medium-bg: rgba(176, 112, 60, 0.08);
+  --priority-medium-border: rgba(176, 112, 60, 0.25);
+  --priority-low: #4a718f;
+  --priority-low-bg: rgba(74, 113, 143, 0.08);
+  --priority-low-border: rgba(74, 113, 143, 0.25);
   
   --shadow-sm: 0 1px 2px rgba(130, 120, 90, 0.15);
   --shadow-md: 0 4px 12px rgba(130, 120, 90, 0.12);
@@ -521,7 +617,7 @@ h1, h2, h3, h4 {
 
 @media (min-width: 850px) {
   .links-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -545,9 +641,11 @@ h1, h2, h3, h4 {
 /* Grid Mode Layout */
 .retro-card.grid-mode {
   flex-direction: column;
-  padding: 1rem 1rem 1.25rem 1rem;
-  height: 240px;
-  justify-content: space-between;
+  padding: 1.25rem;
+  height: 100%;
+  min-height: 350px;
+  display: flex;
+  gap: 0.85rem;
 }
 
 .grid-mode .card-platform-icon {
@@ -591,7 +689,7 @@ h1, h2, h3, h4 {
 .grid-mode .card-middle-divider {
   height: 1px;
   border-bottom: 1px dotted var(--border);
-  margin: 0.5rem 0;
+  margin: 0;
 }
 
 .grid-mode .card-content-block {
@@ -642,17 +740,59 @@ h1, h2, h3, h4 {
 
 .grid-mode .card-bottom-row {
   display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: auto;
+  width: 100%;
+}
+
+.card-tags-actions-line {
+  display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.card-status-priority-line {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  border-top: 1px dotted var(--border);
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.grid-mode .card-status-container,
+.grid-mode .card-priority-container {
+  flex: 1;
+}
+
+.grid-mode .status-select,
+.grid-mode .priority-select {
+  width: 100%;
+  padding: 0.35rem 1.25rem 0.35rem 0.5rem !important;
+  font-size: 0.65rem !important;
+  height: 28px;
+}
+
+.card-bottom-left-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1;
 }
 
 .grid-mode .card-tags-list {
   display: flex;
-  flex-wrap: wrap;
   gap: 0.35rem;
-  max-width: 65%;
   overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex-shrink: 1;
+  width: 100%;
 }
 
 .retro-tag-text {
@@ -747,6 +887,84 @@ h1, h2, h3, h4 {
 /* Hover scales progress bar slightly */
 .retro-card:hover .retro-card-bottom-bar {
   height: 8px;
+}
+
+/* Card Status Dropdown styling */
+.card-status-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0; /* Never shrink the status dropdown */
+}
+
+.status-select {
+  font-family: var(--font-sans);
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.12rem 0.95rem 0.12rem 0.35rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: var(--transition);
+}
+
+/* Caret indicator for status select */
+.card-status-container::after {
+  content: '▼';
+  font-size: 0.45rem;
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  opacity: 0.75;
+}
+
+/* Specific state styling */
+.status-select.status-pending {
+  color: var(--status-pending);
+  background-color: var(--status-pending-bg);
+  border-color: var(--status-pending-border);
+}
+.status-select.status-pending:hover {
+  border-color: var(--status-pending);
+}
+.card-status-container.status-pending::after {
+  color: var(--status-pending);
+}
+
+.status-select.status-in-progress {
+  color: var(--status-inprogress);
+  background-color: var(--status-inprogress-bg);
+  border-color: var(--status-inprogress-border);
+}
+.status-select.status-in-progress:hover {
+  border-color: var(--status-inprogress);
+}
+.card-status-container.status-inprogress::after {
+  color: var(--status-inprogress);
+}
+
+.status-select.status-done {
+  color: var(--status-done);
+  background-color: var(--status-done-bg);
+  border-color: var(--status-done-border);
+}
+.status-select.status-done:hover {
+  border-color: var(--status-done);
+}
+.card-status-container.status-done::after {
+  color: var(--status-done);
+}
+
+.card-meta-info-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 
@@ -875,7 +1093,7 @@ h1, h2, h3, h4 {
   text-transform: uppercase;
 }
 
-.form-input, .form-textarea {
+.form-input, .form-textarea, .form-select {
   background-color: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -888,9 +1106,20 @@ h1, h2, h3, h4 {
   width: 100%;
 }
 
-.form-input:focus, .form-textarea:focus {
+.form-input:focus, .form-textarea:focus, .form-select:focus {
   border-color: var(--text-primary);
   box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.form-select {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%23878c81' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1.25rem;
+  padding-right: 2rem;
 }
 
 .form-textarea {
@@ -1224,7 +1453,7 @@ h1, h2, h3, h4 {
 
 .list-mode .card-bottom-row {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 1.5rem;
   justify-content: flex-end;
 }
@@ -1516,3 +1745,1185 @@ h1, h2, h3, h4 {
   margin-bottom: 0.5rem;
   text-align: left;
 }
+
+/* Card Custom Color styling */
+.retro-card.card-color-red {
+  background-color: var(--card-bg-red);
+  border-color: var(--card-border-red);
+}
+.retro-card.card-color-orange {
+  background-color: var(--card-bg-orange);
+  border-color: var(--card-border-orange);
+}
+.retro-card.card-color-yellow {
+  background-color: var(--card-bg-yellow);
+  border-color: var(--card-border-yellow);
+}
+.retro-card.card-color-green {
+  background-color: var(--card-bg-green);
+  border-color: var(--card-border-green);
+}
+.retro-card.card-color-teal {
+  background-color: var(--card-bg-teal);
+  border-color: var(--card-border-teal);
+}
+.retro-card.card-color-skyblue {
+  background-color: var(--card-bg-skyblue);
+  border-color: var(--card-border-skyblue);
+}
+.retro-card.card-color-blue {
+  background-color: var(--card-bg-blue);
+  border-color: var(--card-border-blue);
+}
+.retro-card.card-color-navyblue {
+  background-color: var(--card-bg-navyblue);
+  border-color: var(--card-border-navyblue);
+}
+.retro-card.card-color-purple {
+  background-color: var(--card-bg-purple);
+  border-color: var(--card-border-purple);
+}
+.retro-card.card-color-pink {
+  background-color: var(--card-bg-pink);
+  border-color: var(--card-border-pink);
+}
+.retro-card.card-color-platinumgray {
+  background-color: var(--card-bg-platinumgray);
+  border-color: var(--card-border-platinumgray);
+}
+.retro-card.card-color-brown {
+  background-color: var(--card-bg-brown);
+  border-color: var(--card-border-brown);
+}
+.retro-card.card-color-red:hover,
+.retro-card.card-color-orange:hover,
+.retro-card.card-color-yellow:hover,
+.retro-card.card-color-green:hover,
+.retro-card.card-color-teal:hover,
+.retro-card.card-color-skyblue:hover,
+.retro-card.card-color-blue:hover,
+.retro-card.card-color-navyblue:hover,
+.retro-card.card-color-purple:hover,
+.retro-card.card-color-pink:hover,
+.retro-card.card-color-platinumgray:hover,
+.retro-card.card-color-brown:hover {
+  border-color: var(--text-secondary);
+}
+
+/* Color Swatches inside Modal */
+.color-swatch-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  padding: 0.25rem 0;
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  position: relative;
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+
+.color-swatch:hover {
+  transform: translateY(-2px) scale(1.05);
+}
+
+.color-swatch.selected {
+  border-color: var(--text-primary);
+  box-shadow: 0 0 0 2px var(--bg-secondary), 0 0 0 4px var(--text-primary);
+}
+
+/* Swatch accent specific styling */
+.color-swatch.swatch-default {
+  background-color: var(--bg-tertiary);
+}
+.color-swatch.swatch-red {
+  background-color: var(--card-bg-red);
+  border-color: var(--card-border-red);
+}
+.color-swatch.swatch-orange {
+  background-color: var(--card-bg-orange);
+  border-color: var(--card-border-orange);
+}
+.color-swatch.swatch-yellow {
+  background-color: var(--card-bg-yellow);
+  border-color: var(--card-border-yellow);
+}
+.color-swatch.swatch-green {
+  background-color: var(--card-bg-green);
+  border-color: var(--card-border-green);
+}
+.color-swatch.swatch-teal {
+  background-color: var(--card-bg-teal);
+  border-color: var(--card-border-teal);
+}
+.color-swatch.swatch-skyblue {
+  background-color: var(--card-bg-skyblue);
+  border-color: var(--card-border-skyblue);
+}
+.color-swatch.swatch-blue {
+  background-color: var(--card-bg-blue);
+  border-color: var(--card-border-blue);
+}
+.color-swatch.swatch-navyblue {
+  background-color: var(--card-bg-navyblue);
+  border-color: var(--card-border-navyblue);
+}
+.color-swatch.swatch-purple {
+  background-color: var(--card-bg-purple);
+  border-color: var(--card-border-purple);
+}
+.color-swatch.swatch-pink {
+  background-color: var(--card-bg-pink);
+  border-color: var(--card-border-pink);
+}
+.color-swatch.swatch-platinumgray {
+  background-color: var(--card-bg-platinumgray);
+  border-color: var(--card-border-platinumgray);
+}
+.color-swatch.swatch-brown {
+  background-color: var(--card-bg-brown);
+  border-color: var(--card-border-brown);
+}
+
+/* YouTube Thumbnail styling */
+.card-thumbnail-wrapper {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background-color: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-thumbnail-wrapper.grid-thumbnail {
+  width: 100%;
+  height: 130px;
+  border-radius: var(--radius-md);
+  margin: 0;
+}
+
+.card-thumbnail-wrapper.list-thumbnail {
+  width: 50px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.card-thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition);
+}
+
+.retro-card:hover .card-thumbnail-img {
+  transform: scale(1.06);
+}
+
+/* Card Status & Priority Row */
+.card-status-priority-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+/* Card Priority Dropdown styling */
+.card-priority-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.priority-select {
+  font-family: var(--font-sans);
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.12rem 0.95rem 0.12rem 0.35rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: var(--transition);
+}
+
+/* Caret indicator for priority select */
+.card-priority-container::after {
+  content: '▼';
+  font-size: 0.45rem;
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  opacity: 0.75;
+}
+
+/* Specific priority state styling */
+.priority-select.priority-low {
+  color: var(--priority-low);
+  background-color: var(--priority-low-bg);
+  border-color: var(--priority-low-border);
+}
+.priority-select.priority-low:hover {
+  border-color: var(--priority-low);
+}
+.card-priority-container.priority-low::after {
+  color: var(--priority-low);
+}
+
+.priority-select.priority-medium {
+  color: var(--priority-medium);
+  background-color: var(--priority-medium-bg);
+  border-color: var(--priority-medium-border);
+}
+.priority-select.priority-medium:hover {
+  border-color: var(--priority-medium);
+}
+.card-priority-container.priority-medium::after {
+  color: var(--priority-medium);
+}
+
+.priority-select.priority-high {
+  color: var(--priority-high);
+  background-color: var(--priority-high-bg);
+  border-color: var(--priority-high-border);
+}
+.priority-select.priority-high:hover {
+  border-color: var(--priority-high);
+}
+.card-priority-container.priority-high::after {
+  color: var(--priority-high);
+}
+
+/* =============================================================
+   8. RETRO MEDIA PLAYERS (CRT TV & TAPE DECK OVERLAYS)
+============================================================= */
+
+/* Hover thumbnail play overlay */
+.thumbnail-play-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(30, 32, 48, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: var(--transition);
+}
+
+.card-thumbnail-wrapper:hover .thumbnail-play-overlay {
+  opacity: 1;
+}
+
+.thumbnail-play-icon {
+  color: var(--accent);
+  filter: drop-shadow(0 2px 8px var(--accent-glow));
+  transform: scale(0.9);
+  transition: transform var(--transition);
+}
+
+.card-thumbnail-wrapper:hover .thumbnail-play-icon {
+  transform: scale(1.15);
+}
+
+/* Common Modal Card style */
+.retro-player-card {
+  position: relative;
+  width: 100%;
+  z-index: 1001;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.player-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1010;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: rgba(30, 32, 48, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.player-close-btn:hover {
+  background-color: var(--error);
+  border-color: var(--error);
+}
+
+/* -------------------------------------------------------------
+   A. VINTAGE CRT TV CABINET STYLING
+------------------------------------------------------------- */
+.crt-tv-container {
+  max-width: 720px;
+  width: 100%;
+  background-color: #2b2621; /* Dark wood cabinet base */
+  border: 8px solid #1a1714;
+  border-radius: 20px;
+  transition: max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease;
+  box-shadow: 
+    inset 0 4px 10px rgba(255, 255, 255, 0.1),
+    0 25px 50px -12px rgba(0, 0, 0, 0.8);
+}
+
+.crt-tv-wrapper {
+  padding: 1.5rem;
+}
+
+.crt-tv-body {
+  display: grid;
+  grid-template-columns: 1fr 140px;
+  gap: 1.25rem;
+  background-color: #1f1a16; /* Dark veneer interior */
+  border: 4px solid #110e0c;
+  border-radius: 12px;
+  padding: 1rem;
+  position: relative;
+}
+
+/* CRT Screen Frame & Bezel */
+.crt-screen-bezel {
+  background-color: #2c2d30; /* Matte grey-brown plastic bezel */
+  border: 12px solid #1a1b1d;
+  border-radius: 24px;
+  box-shadow: 
+    inset 0 5px 15px rgba(0,0,0,0.8),
+    0 4px 8px rgba(0,0,0,0.5);
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16/9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.crt-screen-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.crt-screen-inner.clean-video-screen {
+  border-radius: 0;
+  overflow: visible;
+}
+
+/* Video Iframe */
+.crt-youtube-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background-color: #000;
+}
+
+/* CRT Scanline & Glass Distortion Overlays (Pointer-events none!) */
+.crt-scanlines-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    rgba(0, 0, 0, 0) 50%, 
+    rgba(0, 0, 0, 0.12) 50%
+  );
+  background-size: 100% 4px;
+  background-repeat: repeat-y;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.crt-glass-reflection {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(255, 255, 255, 0) 50%
+  );
+  pointer-events: none;
+  z-index: 6;
+}
+
+.crt-screen-shadow {
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.95);
+  pointer-events: none;
+  z-index: 7;
+}
+
+.crt-flicker-layer {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.005);
+  opacity: 0.8;
+  animation: crt-flicker 0.15s infinite;
+  pointer-events: none;
+  z-index: 8;
+}
+
+@keyframes crt-flicker {
+  0% { opacity: 0.965; }
+  50% { opacity: 0.995; }
+  100% { opacity: 0.975; }
+}
+
+/* Static Noise fallback screen */
+.crt-static-noise-screen {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background-color: #111;
+}
+
+.static-fuzz {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(45deg, #333 0%, #333 10%, #222 10%, #222 20%);
+  opacity: 0.35;
+  animation: fuzz-move 0.05s infinite linear;
+}
+
+@keyframes fuzz-move {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(4px, 4px); }
+}
+
+.crt-center-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #fff;
+  background-color: #b00;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid #ff4d4d;
+  letter-spacing: 0.15em;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+}
+
+/* TV Collapse / Power Off animation */
+.tv-power-off .crt-screen-inner {
+  animation: crt-off-animation 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+@keyframes crt-off-animation {
+  0% {
+    transform: scale(1);
+    filter: brightness(1) contrast(1);
+  }
+  40% {
+    transform: scaleY(0.015) scaleX(1.05);
+    filter: brightness(2) contrast(1.5);
+  }
+  80% {
+    transform: scaleY(0.015) scaleX(0.015);
+    filter: brightness(5) contrast(2);
+  }
+  100% {
+    transform: scaleY(0) scaleX(0);
+    filter: brightness(10) contrast(5);
+    opacity: 0;
+  }
+}
+
+/* Cabinet Feet */
+.crt-cabinet-feet {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 4rem;
+  margin-top: -8px;
+}
+
+.crt-cabinet-feet .foot {
+  width: 45px;
+  height: 12px;
+  background-color: #1a1714;
+  border-radius: 0 0 6px 6px;
+}
+
+/* Right side TV Controls styling */
+.crt-tv-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.crt-tv-brand {
+  font-family: var(--font-sans);
+  font-size: 0.55rem;
+  font-weight: 800;
+  color: #a5adce;
+  letter-spacing: 0.15em;
+  text-align: center;
+  border-bottom: 2px double rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.25rem;
+  width: 100%;
+}
+
+.dial-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.dial-label {
+  font-size: 0.48rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+}
+
+.dial-status-text {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.crt-rotary-dial {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #3e3830 0%, #1e1b18 100%);
+  border: 4px solid #110f0d;
+  box-shadow: 
+    0 3px 6px rgba(0,0,0,0.5),
+    inset 0 1px 2px rgba(255,255,255,0.1);
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.crt-rotary-dial.small-dial {
+  width: 38px;
+  height: 38px;
+}
+
+.dial-notch {
+  width: 4px;
+  height: 14px;
+  background-color: #c6d0f5;
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 2px;
+}
+
+.small-dial .dial-notch {
+  height: 9px;
+  top: 2px;
+}
+
+/* Tactile TV Playback Button */
+.crt-tv-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #3e3830 0%, #1e1b18 100%);
+  border: 4px solid #110f0d;
+  color: #dfd9c6;
+  cursor: pointer;
+  box-shadow: 
+    0 3px 6px rgba(0,0,0,0.5),
+    inset 0 1px 2px rgba(255,255,255,0.1);
+  transition: all 0.1s ease;
+  outline: none;
+}
+
+.crt-tv-btn:active {
+  transform: scale(0.94);
+  box-shadow: 
+    0 1px 2px rgba(0,0,0,0.4),
+    inset 0 3px 6px rgba(0,0,0,0.6);
+}
+
+.crt-tv-btn.playing {
+  background: radial-gradient(circle, #2d5a37 0%, #112616 100%);
+  border-color: #a6d189;
+  color: #a6d189;
+}
+
+.crt-tv-btn.paused {
+  background: radial-gradient(circle, #662222 0%, #2f0f0f 100%);
+  border-color: #e78284;
+  color: #e78284;
+}
+
+/* Tactics Power Switch */
+.crt-power-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.crt-power-label {
+  font-size: 0.48rem;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.crt-power-button {
+  background: #b00;
+  border: 2px solid #500;
+  color: #fff;
+  font-size: 0.5rem;
+  font-weight: bold;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--transition), background-color var(--transition);
+}
+
+.crt-power-button:active {
+  transform: scale(0.92);
+}
+
+.crt-power-button.off {
+  background: #333;
+  border-color: #111;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
+}
+
+.crt-power-led {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  margin-top: 2px;
+  background-color: #333;
+  box-shadow: 0 0 2px rgba(0,0,0,0.5);
+}
+
+.crt-power-led.led-on {
+  background-color: #f00;
+  box-shadow: 0 0 8px #f00;
+}
+
+/* -------------------------------------------------------------
+   B. VINTAGE REEL-TO-REEL DECK STYLING
+------------------------------------------------------------- */
+.tape-deck-container {
+  max-width: 640px;
+  background-color: #2b1f1d; /* Rich cherry-wood border wrapper */
+  border: 8px solid #1a1312;
+  border-radius: var(--radius-lg);
+  box-shadow: 
+    0 25px 50px -12px rgba(0,0,0,0.7),
+    inset 0 2px 5px rgba(255,255,255,0.1);
+  padding: 1.25rem;
+}
+
+.tape-deck-wrapper {
+  position: relative;
+  display: flex;
+  background-color: #ded9ca; /* Cream/aluminum vintage faceplate color */
+  border-radius: 8px;
+  border: 4px solid #1a1312;
+  overflow: hidden;
+  flex-direction: column;
+}
+
+/* Wood side-panels decoration */
+.tape-deck-wood-sides {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-left: 6px solid #4a3321;
+  border-right: 6px solid #4a3321;
+}
+
+.tape-deck-faceplate {
+  padding: 1.25rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  z-index: 2;
+  background-color: #dfd9c6; /* Brushed champagne aluminum */
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, rgba(0,0,0,0.05) 100%);
+}
+
+/* Header */
+.tape-deck-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #5e5a4d;
+  padding-bottom: 0.35rem;
+}
+
+.brand-logo {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 0.75rem;
+  color: #3b372e;
+  letter-spacing: 0.1em;
+}
+
+.tape-deck-stats {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tape-tag {
+  font-size: 0.5rem;
+  font-weight: 700;
+  border: 1px solid #5e5a4d;
+  color: #5e5a4d;
+  padding: 0.05rem 0.25rem;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.05em;
+}
+
+/* Reel Spindles Assembly */
+.tape-reels-assembly {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 120px;
+  position: relative;
+  margin-top: 0.5rem;
+}
+
+.reel-shaft {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-color: rgba(30, 30, 30, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.tape-reel {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #b8b8b0 0%, #7d7d76 100%);
+  border: 2px solid #3b372e;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 5px 10px rgba(0,0,0,0.3),
+    inset 0 1px 2px rgba(255,255,255,0.4);
+  /* Rotation transform is handled dynamically by JS ref */
+}
+
+.reel-center {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #2b2824;
+  border: 3px double #ded9ca;
+  z-index: 5;
+}
+
+.reel-spoke {
+  position: absolute;
+  width: 10px;
+  height: 100%;
+  background-color: #ded9ca;
+  border-left: 1px solid #7d7d76;
+  border-right: 1px solid #7d7d76;
+  opacity: 0.65;
+}
+
+.spoke-1 { transform: rotate(0deg); }
+.spoke-2 { transform: rotate(120deg); }
+.spoke-3 { transform: rotate(240deg); }
+
+.magnetic-tape-wrap {
+  position: absolute;
+  border-radius: 50%;
+  background-color: #5c3321; /* Brown cassette tape color */
+  border: 1px solid #3b2014;
+  z-index: 2;
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.6);
+  transition: width 0.5s ease, height 0.5s ease;
+}
+
+/* Tape Guide Rollers & line decoration */
+.tape-guide-rollers {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 4rem;
+  margin-top: -15px;
+  position: relative;
+  z-index: 3;
+}
+
+.roller {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ddd 0%, #888 100%);
+  border: 2px solid #222;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+
+.tape-line {
+  position: absolute;
+  top: 6px;
+  left: 5.5rem;
+  right: 5.5rem;
+  height: 2px;
+  background-color: #4a2818;
+  opacity: 0.85;
+}
+
+/* Middle Row: Spotify & Oscilloscope */
+.tape-middle-row {
+  display: grid;
+  grid-template-columns: 1fr 190px;
+  gap: 1.25rem;
+}
+
+.tape-embed-container {
+  background-color: #1e1b18;
+  border: 3px solid #2b2824;
+  border-radius: var(--radius-md);
+  padding: 4px;
+  box-shadow: inset 0 3px 10px rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+}
+
+.podcast-fallback-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  text-align: center;
+  color: var(--status-done);
+}
+
+.fallback-podcast-icon {
+  color: var(--status-done);
+}
+
+.fallback-title-text {
+  font-size: 0.75rem;
+  font-weight: bold;
+  font-family: var(--font-heading);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: #dfd9c6;
+}
+
+.fallback-visit-btn {
+  font-size: 0.6rem !important;
+  padding: 0.3rem 0.6rem !important;
+  margin-top: 0.25rem;
+}
+
+/* Oscilloscope panel */
+.oscilloscope-panel {
+  background-color: #1e1b18;
+  border: 3px solid #2b2824;
+  border-radius: var(--radius-md);
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: inset 0 3px 10px rgba(0,0,0,0.8);
+}
+
+.oscilloscope-canvas {
+  width: 100%;
+  height: 90px;
+  border: 1px solid rgba(166, 209, 137, 0.2);
+  border-radius: 4px;
+  background-color: #12131a;
+}
+
+.panel-label {
+  font-family: var(--font-sans);
+  font-size: 0.48rem;
+  font-weight: 700;
+  color: #828277;
+  letter-spacing: 0.05em;
+  margin-top: 0.4rem;
+}
+
+/* Bottom Row */
+.tape-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #cbbeab; /* Contrasting panel color */
+  border: 2px solid #5e5a4d;
+  border-radius: var(--radius-md);
+  padding: 0.5rem 1rem;
+  margin-top: 0.25rem;
+}
+
+/* Dual Analog VU Meters */
+.vu-meters-assembly {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.vu-meter-case {
+  width: 78px;
+  height: 48px;
+  background-color: #000;
+  border: 2px solid #3b372e;
+  border-radius: 4px;
+  padding: 2px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 1px 3px rgba(0,0,0,0.5),
+    inset 0 2px 4px rgba(0,0,0,0.8);
+}
+
+.vu-meter-glass {
+  width: 100%;
+  height: 100%;
+  background-color: #fde68a; /* Soft amber/yellow paper gauge */
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.vu-arc-scale {
+  position: absolute;
+  top: 4px;
+  left: 5%;
+  right: 5%;
+  height: 24px;
+  border-top: 2px solid #000;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  opacity: 0.75;
+}
+
+/* Bouncing needle rotates around pivot at center-bottom */
+.vu-needle {
+  position: absolute;
+  bottom: 0px;
+  left: 50%;
+  width: 2px;
+  height: 38px;
+  background-color: #b91c1c; /* Red needle */
+  transform-origin: 50% 90%;
+  transition: transform 0.05s ease-out;
+  z-index: 3;
+}
+
+.vu-meter-label {
+  position: absolute;
+  bottom: 1px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: 0.45rem;
+  font-weight: 800;
+  color: #111;
+}
+
+/* Tape Transport Controls */
+.tape-transport-controls {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.tape-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 44px;
+  background: linear-gradient(to bottom, #eaeaea 0%, #b8b8b0 100%);
+  border: 2px solid #5e5a4d;
+  border-radius: 4px;
+  color: #3b372e;
+  cursor: pointer;
+  box-shadow: 
+    0 3px 6px rgba(0,0,0,0.3),
+    inset 0 1px 2px #fff;
+  transition: var(--transition);
+}
+
+.tape-btn:active {
+  transform: translateY(1px);
+}
+
+.btn-legend {
+  font-size: 0.42rem;
+  font-weight: 800;
+  margin-top: 0.2rem;
+  letter-spacing: 0.05em;
+  color: #5e5a4d;
+}
+
+.tape-btn.active-play {
+  background: linear-gradient(to bottom, #d8f3e5 0%, #a6d189 100%);
+  border-color: #607d67;
+  color: #2e3b2e;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.tape-btn.active-stop {
+  background: linear-gradient(to bottom, #eaeaea 0%, #dcdcd5 100%);
+  border-color: #5e5a4d;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.tape-btn.active-mute {
+  background: linear-gradient(to bottom, #fde8e8 0%, #e78284 100%);
+  border-color: #8c3b3e;
+  color: #4a1517;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+}
+
+/* Responsiveness for media player models */
+@media (max-width: 600px) {
+  .crt-tv-body {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .crt-tv-controls {
+    flex-direction: row;
+    border-left: none;
+    border-top: 1px dashed rgba(255, 255, 255, 0.1);
+    padding-top: 0.75rem;
+    width: 100%;
+  }
+
+  .crt-rotary-dial {
+    width: 44px;
+    height: 44px;
+  }
+
+  .tape-middle-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .tape-bottom-row {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+}
+
+.tape-instruction-note {
+  font-family: var(--font-sans);
+  font-size: 0.52rem;
+  font-weight: 700;
+  color: #7a5e39; /* Muted brown */
+  text-align: center;
+  margin-top: 0.5rem;
+  letter-spacing: 0.05em;
+  opacity: 0.8;
+  max-width: 380px;
+  align-self: center;
+  line-height: 1.4;
+}
+
+/* Theatre Mode Styles */
+.crt-tv-container.theatre-mode {
+  max-width: min(1380px, 92vw);
+  width: 92vw;
+  background-color: #151210; /* Deep cabinet shadow wood */
+  box-shadow: 
+    inset 0 2px 5px rgba(255, 255, 255, 0.05),
+    0 30px 60px rgba(0, 0, 0, 0.95),
+    0 0 45px rgba(202, 158, 230, 0.18); /* Blue-mauve cathode glow */
+}
+
+.modal-overlay-container.theatre-overlay {
+  padding: 1rem;
+}
+
+.modal-backdrop.theatre-backdrop {
+  background-color: rgba(8, 8, 10, 0.96) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+/* Mechanical slide switch styling */
+.crt-theatre-switch {
+  width: 24px;
+  height: 40px;
+  background-color: #110f0d;
+  border: 2px solid #322e28;
+  border-radius: var(--radius-sm);
+  position: relative;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
+}
+
+.switch-knob {
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(to bottom, #eaeaea, #b8b8b0);
+  border: 1px solid #5e5a4d;
+  border-radius: 2px;
+  position: absolute;
+  left: 3px;
+  top: 4px;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+
+.crt-theatre-switch.switched-on .switch-knob {
+  transform: translateY(16px);
+}
+
