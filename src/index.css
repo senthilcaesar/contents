@@ -3314,11 +3314,20 @@ h1, h2, h3, h4 {
    while minimised — just parked off-screen. Collapsing it or using
    visibility:hidden stops the embedded player, which prevented audio from
    starting until the player was expanded. */
+/* When minimised we still need the Spotify/Apple embed mounted AND inside the
+   viewport — browsers block media autoplay for iframes rendered off-screen.
+   So instead of pushing it to left:-99999px, clip it to a 1px sliver in a
+   corner: it stays in the viewport (autoplay allowed) but is invisible. */
 .rp-tape-deck--hidden {
   position: fixed;
-  left: -99999px;
-  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0.01;
   pointer-events: none;
+  z-index: -1;
 }
 
 /* ── Minibar expand & close buttons ─────────────────────────────── */
