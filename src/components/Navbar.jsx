@@ -1,5 +1,6 @@
 import React from 'react';
 import { Plus, Code } from 'lucide-react';
+import RadioPlayer from './RadioPlayer';
 
 export default function Navbar({ stats, onAddClick, theme, onThemeToggle, user, onLogout, onTechStackClick }) {
   return (
@@ -20,7 +21,9 @@ export default function Navbar({ stats, onAddClick, theme, onThemeToggle, user, 
 
       {/* Right section: System Actions */}
       <div className="retro-header-actions">
-        <button 
+        <RadioPlayer />
+
+        <button
           className="btn-retro"
           onClick={onTechStackClick}
           title="View Project Tech Stack"

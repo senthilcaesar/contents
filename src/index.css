@@ -3162,7 +3162,7 @@ h1, h2, h3, h4 {
 }
 .rp-osc-spec {
   font-family: var(--font-mono, monospace);
-  font-size: 0.52rem;
+  font-size: 0.68rem;
   letter-spacing: 0.06em;
   color: rgba(0,255,157,0.5);
   white-space: nowrap;
@@ -3235,14 +3235,29 @@ h1, h2, h3, h4 {
   -webkit-appearance: none;
   appearance: none;
   width: 70px;
+  /* Taller, transparent input = a comfortable grab area; the visible 4px rail is
+     drawn on the runnable-track below so the look stays slim. */
+  height: 18px;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+}
+.rp-volume-slider::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: 2px;
   background: rgba(255, 255, 255, 0.15);
-  outline: none;
-  cursor: pointer;
   transition: background 0.15s;
 }
-.rp-volume-slider:hover {
+.rp-volume-slider:hover::-webkit-slider-runnable-track {
+  background: rgba(255, 255, 255, 0.25);
+}
+.rp-volume-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  transition: background 0.15s;
+}
+.rp-volume-slider:hover::-moz-range-track {
   background: rgba(255, 255, 255, 0.25);
 }
 .rp-volume-slider::-webkit-slider-thumb {
@@ -3250,6 +3265,8 @@ h1, h2, h3, h4 {
   appearance: none;
   width: 12px;
   height: 12px;
+  /* Centre the 12px thumb on the 4px track: (4 - 12) / 2 = -4px */
+  margin-top: -4px;
   border-radius: 50%;
   background: radial-gradient(circle, #e0e0e0, #888);
   border: 1px solid rgba(0, 0, 0, 0.5);
@@ -3273,6 +3290,11 @@ h1, h2, h3, h4 {
 .rp-volume-slider::-moz-range-thumb:hover {
   transform: scale(1.2);
 }
+/* Locked (Spotify/Apple embed) — fader can't drive the embedded player */
+.rp-volume-control--locked { opacity: 0.55; }
+.rp-volume-slider:disabled { cursor: not-allowed; }
+.rp-volume-slider:disabled::-webkit-slider-thumb { cursor: not-allowed; }
+.rp-volume-slider:disabled::-moz-range-thumb { cursor: not-allowed; }
 .rp-volume-tooltip {
   font-family: var(--font-mono, monospace);
   font-size: 0.48rem;
@@ -3702,6 +3724,192 @@ h1, h2, h3, h4 {
   border-color: var(--accent);
   color: var(--accent);
   background-color: var(--accent-glow);
+}
+
+/* ╔══════════════════════════════════════════════════╗
+   ║  HEADER RADIO PLAYER  (Bloomberg 92.9 FM)        ║
+   ╚══════════════════════════════════════════════════╝ */
+.rr-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px 4px 5px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, var(--bg-primary), var(--bg-secondary));
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.04);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.rr-radio--live {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-glow), 0 4px 14px -6px var(--accent-glow);
+}
+
+/* Power / play-stop */
+.rr-power {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.rr-power:hover {
+  transform: scale(1.06);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.rr-radio--live .rr-power {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg-secondary);
+}
+.rr-spin { animation: rr-spin 0.8s linear infinite; }
+@keyframes rr-spin { to { transform: rotate(360deg); } }
+
+/* Station dial face */
+.rr-face {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1;
+  min-width: 88px;
+}
+.rr-face-top, .rr-face-bottom {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.rr-face-icon { color: var(--text-secondary); flex-shrink: 0; }
+.rr-station {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
+}
+.rr-freq {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+.rr-status {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.46rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+.rr-radio--error .rr-status { color: #e0556b; }
+
+/* Pulsing live dot */
+.rr-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border-hover, #888);
+  flex-shrink: 0;
+}
+.rr-radio--live .rr-live-dot {
+  background: #ff4d4d;
+  box-shadow: 0 0 0 0 rgba(255,77,77,0.6);
+  animation: rr-pulse 1.4s ease-out infinite;
+}
+@keyframes rr-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255,77,77,0.55); }
+  70%  { box-shadow: 0 0 0 5px rgba(255,77,77,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,77,77,0); }
+}
+
+/* Equaliser bars */
+.rr-eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 1.5px;
+  height: 9px;
+}
+.rr-eq i {
+  width: 2px;
+  height: 3px;
+  background: var(--text-secondary);
+  border-radius: 1px;
+  opacity: 0.5;
+}
+.rr-radio--live .rr-eq i {
+  background: var(--accent);
+  opacity: 1;
+  animation: rr-eq 0.9s ease-in-out infinite;
+}
+.rr-radio--live .rr-eq i:nth-child(1) { animation-delay: 0s; }
+.rr-radio--live .rr-eq i:nth-child(2) { animation-delay: 0.25s; }
+.rr-radio--live .rr-eq i:nth-child(3) { animation-delay: 0.1s; }
+.rr-radio--live .rr-eq i:nth-child(4) { animation-delay: 0.4s; }
+@keyframes rr-eq {
+  0%, 100% { height: 3px; }
+  50%      { height: 9px; }
+}
+
+/* Volume */
+.rr-vol {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.rr-vol-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.rr-vol-btn:hover { color: var(--accent); }
+.rr-vol-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 0;
+  opacity: 0;
+  height: 16px;
+  background: transparent;
+  cursor: pointer;
+  transition: width 0.2s ease, opacity 0.2s ease;
+  outline: none;
+}
+.rr-vol-slider--open { width: 56px; opacity: 1; }
+.rr-vol-slider::-webkit-slider-runnable-track {
+  height: 3px; border-radius: 2px; background: var(--border-hover, rgba(150,150,150,0.4));
+}
+.rr-vol-slider::-moz-range-track {
+  height: 3px; border-radius: 2px; background: var(--border-hover, rgba(150,150,150,0.4));
+}
+.rr-vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 10px; height: 10px; margin-top: -3.5px;
+  border-radius: 50%; background: var(--accent); border: none; cursor: pointer;
+}
+.rr-vol-slider::-moz-range-thumb {
+  width: 10px; height: 10px;
+  border-radius: 50%; background: var(--accent); border: none; cursor: pointer;
+}
+
+/* On narrow viewports, drop the dial face text to save room */
+@media (max-width: 640px) {
+  .rr-face { display: none; }
 }
 
 

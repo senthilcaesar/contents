@@ -35,6 +35,7 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
   const needle2Ref    = useRef(-60);
   const progressRef   = useRef(0);
   const phaseRef      = useRef(0);
+  const volumeRef     = useRef(volume); // live volume for the rAF loop (avoids stale closure)
   const spotifyWrapperRef  = useRef(null);
   const embedControllerRef = useRef(null);
   const audioRef      = useRef(null);
@@ -74,6 +75,11 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
   const spotifyId  = !isYouTube && !isNativeAudio ? getSpotifyId(item.url)  : null;
   const appleUrl   = !isYouTube && !isNativeAudio ? getAppleUrl(item.url)   : null;
 
+  // We can only drive the volume for sources we own playback of: the YouTube
+  // iframe (via postMessage) and native <audio>. Spotify/Apple embeds expose no
+  // volume API, so the fader is purely decorative there and must be disabled.
+  const canControlVolume = isYouTube || isNativeAudio;
+
   // Sync isPlaying with HTML5 audio
   useEffect(() => {
     if (isYouTube || !isNativeAudio || !audioRef.current) return;
@@ -84,8 +90,9 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
     }
   }, [isPlaying, isNativeAudio, item.url]);
 
-  // Sync volume with HTML5 audio
+  // Sync volume with HTML5 audio and keep the rAF loop's volume ref current
   useEffect(() => {
+    volumeRef.current = volume;
     if (audioRef.current) {
       audioRef.current.volume = volume / 100;
     }
@@ -319,7 +326,7 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
       document.getElementById('right-spokes')?.setAttribute('transform', `rotate(${rot} ${CX_R} ${CY})`);
 
       // ── VU needles ─────────────────────────────────────────────────
-      const volFactor = volume / 100;
+      const volFactor = volumeRef.current / 100;
       const base1 = isPlaying ? 20 + Math.sin(phaseRef.current * 8.0) * 30 + (Math.random() - 0.5) * 10 : 0;
       const base2 = isPlaying ? 18 + Math.sin(phaseRef.current * 9.5) * 28 + (Math.random() - 0.5) * 12 : 0;
       const t1 = -60 + base1 * volFactor;
@@ -775,6 +782,7 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
                     <span className="rp-osc-spec"><em>SR</em> 256 Hz</span>
                     <span className="rp-osc-spec"><em>FREQ</em> 0.5–35 Hz</span>
                     <span className="rp-osc-spec"><em>AMP</em> ±75 µV</span>
+                    <span className="rp-osc-spec"><em>EEG</em> F3</span>
                   </div>
                   <canvas ref={canvasRef} width="200" height="75" className="rp-osc-canvas" />
                   <div className="rp-osc-label">OSC · 256 Hz</div>
@@ -788,8 +796,8 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
                     }
                   </div>
                 </button>
-                <div className="rp-volume-control">
-                  <span className="rp-volume-icon" title={isYouTube ? "Volume" : "Volume (Adjust in Spotify/Apple widget)"}>
+                <div className={`rp-volume-control ${canControlVolume ? '' : 'rp-volume-control--locked'}`}>
+                  <span className="rp-volume-icon" title={canControlVolume ? "Volume" : "Volume (adjust in the embedded widget)"}>
                     {volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
                   </span>
                   <input
@@ -798,10 +806,11 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
                     max="100"
                     value={volume}
                     onChange={handleVolumeChange}
+                    disabled={!canControlVolume}
                     className="rp-volume-slider"
-                    title={isYouTube ? `Volume: ${volume}%` : "Volume (Adjust in Spotify/Apple widget)"}
+                    title={canControlVolume ? `Volume: ${volume}%` : "Volume is controlled from the embedded widget"}
                   />
-                  {!isYouTube && (
+                  {!canControlVolume && (
                     <span className="rp-volume-tooltip">Adjust on Widget</span>
                   )}
                 </div>
