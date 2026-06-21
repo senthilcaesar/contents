@@ -9,6 +9,7 @@ import DeleteConfirmationModal from './components/DeleteConfirmationModal';
 import TechStackModal from './components/TechStackModal';
 import ToastContainer from './components/Toast';
 import RetroPlayer from './components/RetroPlayer';
+import TagSidebar from './components/TagSidebar';
 
 // Import Firebase config and hooks
 import { 
@@ -91,6 +92,13 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
+
+  // Tag filter & sidebar states
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [matchMode, setMatchMode] = useState('any');
+  const [showSidebar, setShowSidebar] = useState(() => {
+    return window.innerWidth > 768;
+  });
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLink, setEditingLink] = useState(null);
@@ -119,7 +127,7 @@ export default function App() {
   const [toasts, setToasts] = useState([]);
 
   const [viewMode, setViewMode] = useState(() => {
-    return localStorage.getItem('podtube_view_mode') || 'grid';
+    return localStorage.getItem('podtube_view_mode') || 'list';
   });
 
   useEffect(() => {
@@ -341,6 +349,36 @@ export default function App() {
     setIsModalOpen(true);
   };
 
+  // Dynamically calculate unique tags and their frequencies from links
+  const allTags = useMemo(() => {
+    const counts = {};
+    links.forEach((link) => {
+      if (link.tags) {
+        link.tags.forEach((tag) => {
+          const cleaned = tag.trim().toLowerCase();
+          if (cleaned) {
+            counts[cleaned] = (counts[cleaned] || 0) + 1;
+          }
+        });
+      }
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  }, [links]);
+
+  const handleToggleTag = (tagName) => {
+    setSelectedTags((prev) =>
+      prev.includes(tagName)
+        ? prev.filter((t) => t !== tagName)
+        : [...prev, tagName]
+    );
+  };
+
+  const handleClearTags = () => {
+    setSelectedTags([]);
+  };
+
   // Filter and Sort links
   const filteredAndSortedLinks = useMemo(() => {
     let result = [...links];
@@ -364,6 +402,20 @@ export default function App() {
       );
     }
 
+    // 2b. Filter by Selected Tags
+    if (selectedTags.length > 0) {
+      result = result.filter((link) => {
+        const linkTags = (link.tags || []).map((t) => t.toLowerCase());
+        if (matchMode === 'all') {
+          // Every selected tag must be present on the link
+          return selectedTags.every((tag) => linkTags.includes(tag));
+        } else {
+          // At least one selected tag must be present on the link
+          return selectedTags.some((tag) => linkTags.includes(tag));
+        }
+      });
+    }
+
     // 3. Sort
     result.sort((a, b) => {
       if (sortBy === 'newest') {
@@ -385,7 +437,7 @@ export default function App() {
     });
 
     return result;
-  }, [links, filterType, searchQuery, sortBy]);
+  }, [links, filterType, searchQuery, sortBy, selectedTags, matchMode]);
 
   // Auth Loading State Render
   if (loadingAuth) {
@@ -487,55 +539,73 @@ export default function App() {
         setSortBy={setSortBy}
         viewMode={viewMode}
         setViewMode={setViewMode}
+        showSidebar={showSidebar}
+        setShowSidebar={setShowSidebar}
       />
 
-      {/* Links Grid */}
-      <main className="content-area">
-        <AnimatePresence mode="popLayout">
-          {filteredAndSortedLinks.length > 0 ? (
-            <motion.div 
-              layout
-              className={`links-grid ${viewMode === 'list' ? 'list-view' : ''}`}
-            >
-              <AnimatePresence>
-                {filteredAndSortedLinks.map((link) => (
-                  <LinkCard
-                    key={link.id}
-                    item={link}
-                    onEdit={handleEditClick}
-                    onDelete={handleDeleteLink}
-                    onUpdateStatus={handleUpdateStatus}
-                    onUpdatePriority={handleUpdatePriority}
-                    viewMode={viewMode}
-                    onPlay={setActivePlayerItem}
-                  />
-                ))}
-              </AnimatePresence>
-            </motion.div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="empty-state-panel glass-panel"
-            >
-              <div className="empty-icon-wrapper">
-                <Inbox size={48} className="empty-icon" />
-              </div>
-              <h3>No items match your criteria</h3>
-              <p>Try clearing your search query, changing filters, or saving a new link to get started.</p>
-              {searchQuery && (
-                <button 
-                  className="btn btn-secondary"
-                  onClick={() => setSearchQuery('')}
-                >
-                  Clear Search
-                </button>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
+      <div className={`retro-main-layout ${showSidebar ? 'sidebar-open' : 'sidebar-closed'}`}>
+        {/* Tag Sidebar */}
+        <TagSidebar
+          allTags={allTags}
+          selectedTags={selectedTags}
+          onToggleTag={handleToggleTag}
+          onClearTags={handleClearTags}
+          matchMode={matchMode}
+          setMatchMode={setMatchMode}
+          isOpen={showSidebar}
+        />
+
+        {/* Links Grid */}
+        <main className="content-area">
+          <AnimatePresence mode="popLayout">
+            {filteredAndSortedLinks.length > 0 ? (
+              <motion.div 
+                layout
+                className={`links-grid ${viewMode === 'list' ? 'list-view' : ''}`}
+              >
+                <AnimatePresence>
+                  {filteredAndSortedLinks.map((link) => (
+                    <LinkCard
+                      key={link.id}
+                      item={link}
+                      onEdit={handleEditClick}
+                      onDelete={handleDeleteLink}
+                      onUpdateStatus={handleUpdateStatus}
+                      onUpdatePriority={handleUpdatePriority}
+                      viewMode={viewMode}
+                      onPlay={setActivePlayerItem}
+                    />
+                  ))}
+                </AnimatePresence>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="empty-state-panel glass-panel"
+              >
+                <div className="empty-icon-wrapper">
+                  <Inbox size={48} className="empty-icon" />
+                </div>
+                <h3>No items match your criteria</h3>
+                <p>Try clearing your search query, changing filters, or saving a new link to get started.</p>
+                {(searchQuery || selectedTags.length > 0) && (
+                  <button 
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setSearchQuery('');
+                      handleClearTags();
+                    }}
+                  >
+                    Clear All Filters
+                  </button>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
+      </div>
 
       {/* Add / Edit Modal */}
       <LinkModal

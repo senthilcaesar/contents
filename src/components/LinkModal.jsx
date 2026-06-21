@@ -12,6 +12,7 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
   const [status, setStatus] = useState('Pending');
   const [priority, setPriority] = useState('Medium');
   const [color, setColor] = useState('default');
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
   
   const [errors, setErrors] = useState({});
   const [hasManuallySelectedType, setHasManuallySelectedType] = useState(false);
@@ -31,6 +32,7 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
         setStatus(editItem.status || 'Pending');
         setPriority(editItem.priority || 'Medium');
         setColor(editItem.color || 'default');
+        setThumbnailUrl(editItem.thumbnailUrl || '');
         setHasManuallySelectedType(true);
       } else {
         // Reset to default empty state
@@ -43,6 +45,7 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
         setStatus('Pending');
         setPriority('Medium');
         setColor('default');
+        setThumbnailUrl('');
         setHasManuallySelectedType(false);
       }
       setErrors({});
@@ -82,6 +85,7 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
 
   // ── YouTube metadata auto-extraction ──────────────────────────────
   const isYouTubeUrl = (u) => /youtube\.com|youtu\.be/.test((u || '').toLowerCase());
+  const isSpotifyUrl = (u) => /spotify\.com/.test((u || '').toLowerCase());
 
   const extractYouTubeId = (u) => {
     const m = (u || '').match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
@@ -111,7 +115,14 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
           if (res.ok) {
             const json = await res.json();
             const s = json.items?.[0]?.snippet;
-            if (s) meta = { title: s.title, creator: s.channelTitle, description: s.description };
+            if (s) {
+              meta = { 
+                title: s.title, 
+                creator: s.channelTitle, 
+                description: s.description,
+                thumbnailUrl: `https://img.youtube.com/vi/${id}/mqdefault.jpg`
+              };
+            }
           }
         }
       }
@@ -123,7 +134,12 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
         );
         if (!res.ok) throw new Error('unreachable');
         const json = await res.json();
-        meta = { title: json.title, creator: json.author_name, description: '' };
+        meta = { 
+          title: json.title, 
+          creator: json.author_name, 
+          description: '', 
+          thumbnailUrl: json.thumbnail_url || `https://img.youtube.com/vi/${extractYouTubeId(target)}/mqdefault.jpg`
+        };
       }
 
       // Apply — overwrite on explicit click, otherwise only fill empty fields
@@ -135,6 +151,7 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
       }
       if (meta.creator && (force || !creator.trim())) setCreator(meta.creator);
       if (meta.description && (force || !description.trim())) setDescription(meta.description);
+      if (meta.thumbnailUrl && (force || !thumbnailUrl.trim())) setThumbnailUrl(meta.thumbnailUrl);
 
       setFetchNote('Details filled from YouTube.');
     } catch (_) {
@@ -144,9 +161,48 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
     }
   };
 
-  // Auto-fetch when the user finishes entering a YouTube URL (fills blanks only)
+  // Pull title / cover art from a Spotify URL.
+  const fetchSpotifyMetadata = async ({ force = false } = {}) => {
+    const target = url.trim();
+    if (!target || !isSpotifyUrl(target) || isFetching) return;
+
+    setIsFetching(true);
+    setFetchNote('');
+
+    try {
+      const res = await fetch(
+        `https://open.spotify.com/oembed?url=${encodeURIComponent(target)}`
+      );
+      if (!res.ok) throw new Error('unreachable');
+      const json = await res.json();
+
+      setType('podcast');
+      setHasManuallySelectedType(true);
+
+      if (json.title && (force || !title.trim())) {
+        setTitle(json.title);
+        if (errors.title) setErrors((prev) => ({ ...prev, title: null }));
+      }
+
+      if (json.thumbnail_url && (force || !thumbnailUrl.trim())) {
+        setThumbnailUrl(json.thumbnail_url);
+      }
+
+      setFetchNote('Details filled from Spotify.');
+    } catch (_) {
+      setFetchNote("Couldn't fetch Spotify details automatically.");
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
+  // Auto-fetch when the user finishes entering a URL (fills blanks only)
   const handleUrlBlur = () => {
-    if (isYouTubeUrl(url)) fetchYouTubeMetadata();
+    if (isYouTubeUrl(url)) {
+      fetchYouTubeMetadata();
+    } else if (isSpotifyUrl(url)) {
+      fetchSpotifyMetadata();
+    }
   };
 
   // Basic URL Validation
@@ -195,6 +251,7 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
       status,
       priority,
       color,
+      thumbnailUrl: thumbnailUrl.trim(),
     });
 
     onClose();
@@ -270,9 +327,15 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
                   <button
                     type="button"
                     className="btn-autofill"
-                    onClick={() => fetchYouTubeMetadata({ force: true })}
-                    disabled={isFetching || !isYouTubeUrl(url)}
-                    title="Auto-fill title, creator & description from YouTube"
+                    onClick={() => {
+                      if (isYouTubeUrl(url)) {
+                        fetchYouTubeMetadata({ force: true });
+                      } else if (isSpotifyUrl(url)) {
+                        fetchSpotifyMetadata({ force: true });
+                      }
+                    }}
+                    disabled={isFetching || (!isYouTubeUrl(url) && !isSpotifyUrl(url))}
+                    title="Auto-fill details from YouTube or Spotify"
                   >
                     {isFetching
                       ? <Loader2 size={15} className="autofill-spin" />
@@ -400,6 +463,19 @@ export default function LinkModal({ isOpen, onClose, onSave, editItem }) {
                   type="text"
                   value={tagsInput}
                   onChange={(e) => setTagsInput(e.target.value)}
+                  className="form-input"
+                />
+              </div>
+
+              {/* Thumbnail URL */}
+              <div className="form-group">
+                <label htmlFor="modal-thumbnail-url" className="form-label">Thumbnail URL (Optional)</label>
+                <input
+                  id="modal-thumbnail-url"
+                  type="text"
+                  placeholder="https://example.com/image.jpg"
+                  value={thumbnailUrl}
+                  onChange={(e) => setThumbnailUrl(e.target.value)}
                   className="form-input"
                 />
               </div>

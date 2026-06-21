@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ExternalLink, Edit2, Trash2, Play } from 'lucide-react';
 
@@ -6,6 +6,21 @@ export default function LinkCard({ item, onEdit, onDelete, onUpdateStatus, onUpd
   const isYouTube = item.type === 'youtube';
   const typeLabel = isYouTube ? 'YOUTUBE WORKER' : 'PODCAST SOURCE';
   const isList = viewMode === 'list';
+
+  const [spotifyThumbnail, setSpotifyThumbnail] = useState(null);
+
+  useEffect(() => {
+    if (!item.thumbnailUrl && item.url && item.url.includes('spotify.com')) {
+      fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(item.url)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.thumbnail_url) {
+            setSpotifyThumbnail(data.thumbnail_url);
+          }
+        })
+        .catch((err) => console.error('Error fetching Spotify oEmbed:', err));
+    }
+  }, [item.url, item.thumbnailUrl]);
 
   const getYouTubeId = (url) => {
     if (!url) return null;
@@ -15,6 +30,7 @@ export default function LinkCard({ item, onEdit, onDelete, onUpdateStatus, onUpd
   };
 
   const youtubeId = isYouTube ? getYouTubeId(item.url) : null;
+  const thumbnail = item.thumbnailUrl || (isYouTube && youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null) || spotifyThumbnail;
 
   return (
     <motion.div
@@ -32,16 +48,16 @@ export default function LinkCard({ item, onEdit, onDelete, onUpdateStatus, onUpd
             {isYouTube ? '📺' : '🎙️'}
           </span>
 
-          {isList && youtubeId && (
+          {isList && thumbnail && (
             <div 
               className="card-thumbnail-wrapper list-thumbnail"
               onClick={() => onPlay && onPlay(item)}
               style={{ cursor: 'pointer' }}
-              title="Watch Video"
+              title={isYouTube ? "Watch Video" : "Listen Podcast"}
             >
               <img 
-                src={`https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`} 
-                alt="Video Preview" 
+                src={thumbnail} 
+                alt="Preview" 
                 className="card-thumbnail-img" 
               />
             </div>
@@ -54,16 +70,16 @@ export default function LinkCard({ item, onEdit, onDelete, onUpdateStatus, onUpd
         </div>
       </div>
 
-      {!isList && youtubeId && (
+      {!isList && thumbnail && (
         <div 
           className="card-thumbnail-wrapper grid-thumbnail"
           onClick={() => onPlay && onPlay(item)}
           style={{ cursor: 'pointer' }}
-          title="Watch Video"
+          title={isYouTube ? "Watch Video" : "Listen Podcast"}
         >
           <img 
-            src={`https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`} 
-            alt="Video Thumbnail" 
+            src={thumbnail} 
+            alt="Thumbnail" 
             className="card-thumbnail-img"
           />
           <div className="thumbnail-play-overlay">

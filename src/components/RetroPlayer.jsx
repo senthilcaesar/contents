@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Radio, Play, Pause } from 'lucide-react';
+import { Radio, Play, Pause, Volume2, VolumeX } from 'lucide-react';
 
 export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize, onClose }) {
   const isYouTube = item.type === 'youtube';
@@ -12,13 +12,18 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
   const [iframeKey, setIframeKey] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [progress, setProgress] = useState(0); // 0..1 playback progress for mini ring
+  const [volume, setVolume] = useState(50); // 0..100 fader volume
 
   useEffect(() => {
     if (isMinimized) setIsFullscreen(false);
   }, [isMinimized]);
 
-  // Reset progress when the playing item changes
-  useEffect(() => { setProgress(0); }, [item.url]);
+  // Reset progress and start playing when the item changes
+  useEffect(() => {
+    setProgress(0);
+    progressRef.current = 0;
+    setIsPlaying(true);
+  }, [item.url]);
 
   // Animation refs
   const canvasRef     = useRef(null);
@@ -28,10 +33,11 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
   const reelsSpeedRef = useRef(0);
   const needle1Ref    = useRef(-60);
   const needle2Ref    = useRef(-60);
-  const progressRef   = useRef(0.28);
+  const progressRef   = useRef(0);
   const phaseRef      = useRef(0);
   const spotifyWrapperRef  = useRef(null);
   const embedControllerRef = useRef(null);
+  const audioRef      = useRef(null);
 
   // ── URL helpers ──────────────────────────────────────────────────────────
   const getYouTubeId = (url) => {
@@ -48,10 +54,54 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
     if (!url || !url.includes('podcasts.apple.com')) return null;
     return url.replace('podcasts.apple.com', 'embed.podcasts.apple.com');
   };
+  const getAudioStreamUrl = (url) => {
+    if (!url) return null;
+    if (url.includes('3GmrM263G1jS7424263152')) {
+      return 'https://content.blubrry.com/takeituneasy/lex_ai_sam_altman.mp3';
+    }
+    if (url.includes('56238612836217316')) {
+      return 'https://traffic.megaphone.fm/SCIM6408620468.mp3';
+    }
+    if (/\.(mp3|wav|ogg|m4a|aac)(\?.*)?$/i.test(url) || url.includes('traffic.megaphone.fm') || url.includes('content.blubrry.com')) {
+      return url;
+    }
+    return null;
+  };
 
   const youtubeId  = isYouTube ? getYouTubeId(item.url)  : null;
-  const spotifyId  = !isYouTube ? getSpotifyId(item.url)  : null;
-  const appleUrl   = !isYouTube ? getAppleUrl(item.url)   : null;
+  const streamUrl  = getAudioStreamUrl(item.url);
+  const isNativeAudio = !isYouTube && !!streamUrl;
+  const spotifyId  = !isYouTube && !isNativeAudio ? getSpotifyId(item.url)  : null;
+  const appleUrl   = !isYouTube && !isNativeAudio ? getAppleUrl(item.url)   : null;
+
+  // Sync isPlaying with HTML5 audio
+  useEffect(() => {
+    if (isYouTube || !isNativeAudio || !audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.play().catch(err => console.log("Playback blocked:", err));
+    } else {
+      audioRef.current.pause();
+    }
+  }, [isPlaying, isNativeAudio, item.url]);
+
+  // Sync volume with HTML5 audio
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume / 100;
+    }
+  }, [volume, isNativeAudio]);
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current && audioRef.current.duration) {
+      const p = audioRef.current.currentTime / audioRef.current.duration;
+      progressRef.current = p;
+      setProgress(Math.min(1, p));
+    }
+  };
+
+  const handleAudioEnded = () => {
+    setIsPlaying(false);
+  };
 
   // ── Cleanup ──────────────────────────────────────────────────────────────
   useEffect(() => () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); }, []);
@@ -151,8 +201,12 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
 
     const CX_L = 130, CX_R = 470, CY = 100;
 
+    let lastTime = performance.now();
+
     const render = () => {
-      const phase = phaseRef.current;
+      const now = performance.now();
+      const delta = Math.min(0.1, (now - lastTime) / 1000.0);
+      lastTime = now;
 
       // ── Oscilloscope ─────────────────────────────────────────────
       ctx.clearRect(0, 0, W, H);
@@ -172,23 +226,49 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
       ctx.shadowBlur  = 12;
       ctx.shadowColor = '#00ff9d';
       const amp   = isPlaying ? 24 : 0.6;
-      const sweep = 2.0;
+      const sweep = 8.0; // 8 seconds sweep
       const tpp   = sweep / W;
-      const tOff  = phase * 0.022;
+      const tOff  = phaseRef.current;
+
       for (let x = 0; x < W; x++) {
         let y = H / 2;
         if (isPlaying) {
-          const t  = x * tpp + tOff;
-          const so = Math.sin(2 * Math.PI * 0.75 * t) * 0.45;
-          const se = Math.max(0, Math.sin(2 * Math.PI * 0.08 * t) * 0.7 + 0.3);
-          const sp = se * Math.sin(2 * Math.PI * 13 * t) * 0.30;
-          const nf = [1.2, 2.7, 4.3, 6.1, 8.7];
-          const na = [0.22, 0.16, 0.12, 0.09, 0.07];
-          let noise = 0;
-          for (let i = 0; i < nf.length; i++) noise += Math.sin(2*Math.PI*nf[i]*t + i*1.7) * na[i];
-          y += (so + sp + noise) * amp + (Math.random()-0.5) * 0.8;
+          const t = tOff + x * tpp;
+
+          // 1. Slow Oscillations (0.5 - 0.8 Hz)
+          const soMod = 0.6 + 0.4 * Math.sin(2 * Math.PI * 0.04 * t);
+          const so = soMod * (
+            0.65 * Math.sin(2 * Math.PI * 0.55 * t + 1.2) +
+            0.35 * Math.sin(2 * Math.PI * 0.80 * t + 3.7)
+          );
+
+          // 2. Sleep Spindles (13 Hz) with waxing-and-waning envelope beating at 9s and 13s periods
+          const env1 = Math.cos(2 * Math.PI * (t / 9.0) + 0.5);
+          const env2 = Math.cos(2 * Math.PI * (t / 13.0) + 4.2);
+          const spindleEnv = Math.pow(Math.max(0, 0.65 * env1 + 0.45 * env2 - 0.25), 2.5) * 1.5;
+
+          // Phase-Amplitude Coupling (PAC) - spindle is nested on slow wave peaks
+          const pac = 0.5 + 0.5 * so;
+          const spindle = spindleEnv * pac * Math.sin(2 * Math.PI * 13.0 * t);
+
+          // 3. 1/f Background Neural Noise
+          const noise = 0.12 * Math.sin(2 * Math.PI * 1.8 * t + 0.7) +
+                        0.08 * Math.sin(2 * Math.PI * 2.9 * t + 2.3) +
+                        0.05 * Math.sin(2 * Math.PI * 4.3 * t + 1.1) +
+                        0.04 * Math.sin(2 * Math.PI * 6.1 * t + 3.9) +
+                        0.025 * Math.sin(2 * Math.PI * 9.2 * t + 0.5) +
+                        0.02 * Math.sin(2 * Math.PI * 11.1 * t + 2.7) +
+                        0.015 * Math.sin(2 * Math.PI * 17.3 * t + 4.1) +
+                        0.01 * Math.sin(2 * Math.PI * 23.5 * t + 1.9) +
+                        0.008 * Math.sin(2 * Math.PI * 29.1 * t + 5.3);
+
+          // Combine with a tiny bit of white noise / amplifier thermal hiss
+          const white = (Math.random() - 0.5) * 0.04;
+          const eegVal = so * 0.75 + spindle * 0.35 + noise * 0.8 + white;
+
+          y += eegVal * amp;
         } else {
-          y += (Math.random()-0.5) * 0.5;
+          y += (Math.random() - 0.5) * 0.5;
         }
         if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
@@ -197,16 +277,21 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
 
       // ── Physics ────────────────────────────────────────────────────
       if (isPlaying) {
-        phaseRef.current += 0.10;
+        phaseRef.current += delta;
         if (!spotifyId) {
-          progressRef.current += 0.000045;
+          progressRef.current += 0.0027 * delta;
           if (progressRef.current > 1) progressRef.current = 0;
         }
-        reelsAngleRef.current += reelsSpeedRef.current;
+        reelsAngleRef.current += reelsSpeedRef.current * (delta * 60);
         if (reelsAngleRef.current >= 360) reelsAngleRef.current -= 360;
       }
-      if (isPlaying && reelsSpeedRef.current < 2.5)       reelsSpeedRef.current += 0.05;
-      else if (!isPlaying && reelsSpeedRef.current > 0) { reelsSpeedRef.current -= 0.10; if (reelsSpeedRef.current < 0) reelsSpeedRef.current = 0; }
+      if (isPlaying && reelsSpeedRef.current < 2.5) {
+        reelsSpeedRef.current += 0.05 * (delta * 60);
+        if (reelsSpeedRef.current > 2.5) reelsSpeedRef.current = 2.5;
+      } else if (!isPlaying && reelsSpeedRef.current > 0) {
+        reelsSpeedRef.current -= 0.10 * (delta * 60);
+        if (reelsSpeedRef.current < 0) reelsSpeedRef.current = 0;
+      }
 
       // ── Update SVG reels ───────────────────────────────────────────
       const r1 = 28 + 46 * (1 - progressRef.current);
@@ -234,10 +319,13 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
       document.getElementById('right-spokes')?.setAttribute('transform', `rotate(${rot} ${CX_R} ${CY})`);
 
       // ── VU needles ─────────────────────────────────────────────────
-      const t1 = isPlaying ? -40 + Math.sin(phase*1.4)*35 + (Math.random()-0.5)*15 : -60;
-      const t2 = isPlaying ? -42 + Math.sin(phase*1.7)*32 + (Math.random()-0.5)*18 : -60;
-      needle1Ref.current += (t1 - needle1Ref.current) * 0.25;
-      needle2Ref.current += (t2 - needle2Ref.current) * 0.25;
+      const volFactor = volume / 100;
+      const base1 = isPlaying ? 20 + Math.sin(phaseRef.current * 8.0) * 30 + (Math.random() - 0.5) * 10 : 0;
+      const base2 = isPlaying ? 18 + Math.sin(phaseRef.current * 9.5) * 28 + (Math.random() - 0.5) * 12 : 0;
+      const t1 = -60 + base1 * volFactor;
+      const t2 = -60 + base2 * volFactor;
+      needle1Ref.current += (t1 - needle1Ref.current) * 0.25 * (delta * 60);
+      needle2Ref.current += (t2 - needle2Ref.current) * 0.25 * (delta * 60);
       const n1 = document.getElementById('vu-needle-left');
       const n2 = document.getElementById('vu-needle-right');
       if (n1) n1.style.transform = `rotate(${needle1Ref.current}deg)`;
@@ -261,10 +349,35 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
     );
   };
 
+  const handleVolumeChange = (e) => {
+    const nextVal = parseInt(e.target.value, 10);
+    setVolume(nextVal);
+    if (isYouTube) {
+      iframeRef.current?.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func: 'setVolume', args: [nextVal] }), '*'
+      );
+    }
+  };
+
+  const cycleVolume = () => {
+    setVolume(prev => {
+      const next = prev >= 100 ? 0 : prev + 25;
+      if (isYouTube) {
+        iframeRef.current?.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: 'setVolume', args: [next] }), '*'
+        );
+      }
+      return next;
+    });
+  };
+
   // Tell the YT iframe to start emitting infoDelivery (progress) events
   const startYTListening = () => {
     iframeRef.current?.contentWindow?.postMessage(
       JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*'
+    );
+    iframeRef.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: 'command', func: 'setVolume', args: [volume] }), '*'
     );
   };
 
@@ -556,6 +669,14 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
                     <span className="dial-status-text">{isPlaying ? 'PLAYING' : 'PAUSED'}</span>
                   </div>
                   <div className="dial-group">
+                    <label className="dial-label">VOLUME</label>
+                    <div className="crt-rotary-dial small-dial" onClick={cycleVolume}
+                      style={{ transform: `rotate(${volume * 2.4}deg)` }}>
+                      <div className="dial-notch" />
+                    </div>
+                    <span className="dial-status-text">{volume === 0 ? 'MUTED' : `${volume}%`}</span>
+                  </div>
+                  <div className="dial-group">
                     <label className="dial-label">CRT FILTER</label>
                     <button type="button" className={`crt-theatre-switch ${!isCleanScreen ? 'switched-on' : 'switched-off'}`} onClick={() => setIsCleanScreen(s => !s)}>
                       <span className="switch-knob" />
@@ -667,6 +788,23 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
                     }
                   </div>
                 </button>
+                <div className="rp-volume-control">
+                  <span className="rp-volume-icon" title={isYouTube ? "Volume" : "Volume (Adjust in Spotify/Apple widget)"}>
+                    {volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                  </span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={volume}
+                    onChange={handleVolumeChange}
+                    className="rp-volume-slider"
+                    title={isYouTube ? `Volume: ${volume}%` : "Volume (Adjust in Spotify/Apple widget)"}
+                  />
+                  {!isYouTube && (
+                    <span className="rp-volume-tooltip">Adjust on Widget</span>
+                  )}
+                </div>
                 <div className="rp-vu-pair">
                   {['left', 'right'].map(ch => (
                     <div key={ch} className="rp-vu">
@@ -683,6 +821,16 @@ export default function RetroPlayer({ item, isMinimized, onMinimize, onMaximize,
 
               <div className="rp-footer">Audio Player</div>
             </div>
+          )}
+
+          {isNativeAudio && (
+            <audio
+              ref={audioRef}
+              src={streamUrl}
+              preload="auto"
+              onTimeUpdate={handleTimeUpdate}
+              onEnded={handleAudioEnded}
+            />
           )}
 
         </motion.div>

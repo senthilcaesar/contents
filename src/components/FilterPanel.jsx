@@ -1,4 +1,5 @@
 import React from 'react';
+import { Tag } from 'lucide-react';
 
 export default function FilterPanel({
   searchQuery,
@@ -9,6 +10,8 @@ export default function FilterPanel({
   setSortBy,
   viewMode,
   setViewMode,
+  showSidebar,
+  setShowSidebar,
 }) {
   return (
     <div className="retro-filter-container">
@@ -68,6 +71,18 @@ export default function FilterPanel({
         </div>
 
         <div className="retro-right-actions">
+          {/* Tag Sidebar Toggle Button */}
+          <button
+            type="button"
+            className={`btn-retro tag-toggle-btn ${showSidebar ? 'active' : ''}`}
+            onClick={() => setShowSidebar(!showSidebar)}
+            title="Toggle Tag Sidebar"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+          >
+            <Tag size={12} />
+            <span>TAGS</span>
+          </button>
+
           <div className="retro-sort-wrapper">
             <span className="sort-label">SORT:</span>
             <select
