@@ -3454,6 +3454,9 @@ h1, h2, h3, h4 {
 /* -------------------------------------------------------------
    4. RETRO MAIN LAYOUT & TAG SIDEBAR
 ------------------------------------------------------------- */
+/* -------------------------------------------------------------
+   4. RETRO MAIN LAYOUT & TAG SIDEBAR
+------------------------------------------------------------- */
 .retro-main-layout {
   display: grid;
   grid-template-columns: 1fr;
@@ -3461,11 +3464,15 @@ h1, h2, h3, h4 {
   align-items: start;
   width: 100%;
   margin-top: 0.5rem;
+  transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @media (min-width: 769px) {
   .retro-main-layout.sidebar-open {
     grid-template-columns: 240px 1fr;
+  }
+  .retro-main-layout.sidebar-closed {
+    grid-template-columns: 60px 1fr;
   }
 }
 
@@ -3481,6 +3488,83 @@ h1, h2, h3, h4 {
   position: sticky;
   top: 1.5rem;
   z-index: 10;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.retro-tag-sidebar.minimized {
+  width: 60px;
+  padding: 0.75rem 0.5rem;
+  align-items: center;
+  cursor: pointer;
+  height: 380px;
+}
+
+.retro-tag-sidebar.minimized:hover {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-hover);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.vertical-title-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.vertical-text {
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  letter-spacing: 0.25em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.sidebar-toggle-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.sidebar-toggle-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background-color: var(--accent-glow);
+}
+
+.sidebar-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.minimized-tags-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  border-radius: 50%;
+  background-color: var(--accent);
+  color: var(--bg-secondary);
+  box-shadow: 0 0 6px var(--accent-glow);
+  margin-top: auto;
+  margin-bottom: 0.5rem;
+  animation: sidebarPulse 1.8s infinite alternate;
 }
 
 @media (max-width: 768px) {
@@ -3488,6 +3572,9 @@ h1, h2, h3, h4 {
     position: relative;
     top: 0;
     width: 100%;
+  }
+  .retro-tag-sidebar.minimized {
+    display: none;
   }
 }
 

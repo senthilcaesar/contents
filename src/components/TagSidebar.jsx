@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Tag, Search, X, SlidersHorizontal } from 'lucide-react';
+import { useState } from 'react';
+import { Tag, Search, X, SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function TagSidebar({
   allTags,
@@ -9,10 +9,36 @@ export default function TagSidebar({
   matchMode,
   setMatchMode,
   isOpen,
+  onToggleSidebar,
 }) {
   const [tagQuery, setTagQuery] = useState('');
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return (
+      <aside 
+        className="retro-tag-sidebar minimized glass-panel" 
+        onClick={onToggleSidebar} 
+        title="Expand Tag Sidebar"
+      >
+        <button 
+          className="sidebar-toggle-btn expand" 
+          onClick={(e) => { e.stopPropagation(); onToggleSidebar(); }}
+          title="Expand Tag Sidebar"
+        >
+          <ChevronRight size={14} />
+        </button>
+        <div className="vertical-title-container">
+          <Tag size={12} className="sidebar-title-icon" />
+          <span className="retro-meta-caps vertical-text">VAULT_TAGS</span>
+        </div>
+        {selectedTags.length > 0 && (
+          <div className="minimized-tags-indicator" title={`${selectedTags.length} active filter(s)`}>
+            {selectedTags.length}
+          </div>
+        )}
+      </aside>
+    );
+  }
 
   // Filter tags based on sidebar search input
   const filteredTags = allTags.filter((tag) =>
@@ -27,15 +53,24 @@ export default function TagSidebar({
           <Tag size={14} className="sidebar-title-icon" />
           <span className="retro-meta-caps">VAULT_TAGS</span>
         </div>
-        {selectedTags.length > 0 && (
+        <div className="sidebar-header-actions">
+          {selectedTags.length > 0 && (
+            <button 
+              onClick={onClearTags} 
+              className="retro-clear-tags-btn"
+              title="Clear all filters"
+            >
+              [CLEAR]
+            </button>
+          )}
           <button 
-            onClick={onClearTags} 
-            className="retro-clear-tags-btn"
-            title="Clear all filters"
+            onClick={onToggleSidebar} 
+            className="sidebar-toggle-btn collapse"
+            title="Minimize Tag Sidebar"
           >
-            [CLEAR]
+            <ChevronLeft size={14} />
           </button>
-        )}
+        </div>
       </div>
 
       {/* Tag Search Input */}

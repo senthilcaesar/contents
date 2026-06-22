@@ -32,55 +32,6 @@ import {
   query, 
   orderBy 
 } from 'firebase/firestore';
-
-// Default initial links to make the app look stunning on first load
-const INITIAL_LINKS = [
-  {
-    id: 'init-1',
-    title: 'How We Learn to Think: Cognitive Heuristics',
-    url: 'https://www.youtube.com/watch?v=UBVV8pch1dM',
-    type: 'youtube',
-    creator: 'Veritasium',
-    description: 'An exploration of human biases, dual-process theory, and the cognitive tricks our brains play to save energy.',
-    tags: ['science', 'psychology', 'learning'],
-    status: 'Done',
-    priority: 'High',
-  },
-  {
-    id: 'init-2',
-    title: 'Sam Altman: OpenAI, GPT-4, and the Future of AI',
-    url: 'https://open.spotify.com/episode/3GmrM263G1jS7424263152',
-    type: 'podcast',
-    creator: 'Lex Fridman Podcast',
-    description: 'A deep-dive conversation about neural networks, artificial general intelligence (AGI), safety alignment, and human consciousness.',
-    tags: ['ai', 'tech', 'philosophy'],
-    status: 'In Progress',
-    priority: 'Medium',
-  },
-  {
-    id: 'init-3',
-    title: 'The Future of Smartphones & Foldable Devices',
-    url: 'https://www.youtube.com/watch?v=d_kH4-OslQ4',
-    type: 'youtube',
-    creator: 'Marques Brownlee',
-    description: 'Reviewing next-generation rollable displays, under-display cameras, and the modular software paradigms defining modern pocket computers.',
-    tags: ['tech', 'gadgets', 'design'],
-    status: 'Pending',
-    priority: 'Low',
-  },
-  {
-    id: 'init-4',
-    title: 'Sleep Toolkit: Protocols for Enhancing Rest and Focus',
-    url: 'https://open.spotify.com/episode/56238612836217316',
-    type: 'podcast',
-    creator: 'Huberman Lab',
-    description: 'Neurologist Dr. Andrew Huberman shares actionable scientific protocols for optimizing sleep quality, circadian alignment, and cognitive function.',
-    tags: ['health', 'science', 'lifestyle'],
-    status: 'Pending',
-    priority: 'Medium',
-  }
-];
-
 export default function App() {
   // Auth state
   const [currentUser, setCurrentUser] = useState(null);
@@ -96,9 +47,7 @@ export default function App() {
   // Tag filter & sidebar states
   const [selectedTags, setSelectedTags] = useState([]);
   const [matchMode, setMatchMode] = useState('any');
-  const [showSidebar, setShowSidebar] = useState(() => {
-    return window.innerWidth > 768;
-  });
+  const [showSidebar, setShowSidebar] = useState(false);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLink, setEditingLink] = useState(null);
@@ -186,36 +135,11 @@ export default function App() {
       orderBy('createdAt', 'desc')
     );
 
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedLinks = [];
       snapshot.forEach((doc) => {
         fetchedLinks.push(doc.data());
       });
-
-      // Seed default template links if the user is logging in for the first time and vault is empty
-      if (fetchedLinks.length === 0) {
-        const seedKey = `podtube_seeded_${currentUser.uid}`;
-        const isSeeded = localStorage.getItem(seedKey);
-        if (!isSeeded) {
-          localStorage.setItem(seedKey, 'true');
-          try {
-            for (const initialLink of INITIAL_LINKS) {
-              const newId = initialLink.id === 'init-1' ? 'init-1' : `link-${Math.random().toString(36).substring(2, 9)}`;
-              const seededLink = {
-                ...initialLink,
-                id: newId,
-                createdAt: Date.now() - (INITIAL_LINKS.indexOf(initialLink) * 1000 * 60 * 60)
-              };
-              await setDoc(doc(db, 'users', currentUser.uid, 'links', newId), seededLink);
-            }
-            triggerToast('Welcome! Seeded initial vault templates.', 'success');
-          } catch (err) {
-            console.error('Error seeding initial links:', err);
-            triggerToast('Failed to seed template links.', 'error');
-          }
-          return;
-        }
-      }
 
       setLinks(fetchedLinks);
     }, (error) => {
@@ -553,6 +477,7 @@ export default function App() {
           matchMode={matchMode}
           setMatchMode={setMatchMode}
           isOpen={showSidebar}
+          onToggleSidebar={() => setShowSidebar(!showSidebar)}
         />
 
         {/* Links Grid */}
